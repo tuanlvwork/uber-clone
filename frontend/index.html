@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uber Clone - Kafka Powered Ride Sharing</title>
+    <meta name="description" content="Modern ride-sharing application powered by Apache Kafka microservices">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="hero-section">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <rect width="40" height="40" rx="8" fill="url(#gradient1)"/>
+                        <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 26L18 20L24 26L30 20" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="gradient1" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>UberKafka</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#architecture">Architecture</a>
+                    <a href="#demo">Demo</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    Real-Time Ride Sharing
+                    <span class="gradient-text">Powered by Kafka</span>
+                </h1>
+                <p class="hero-description">
+                    Experience the future of transportation with our event-driven microservices architecture.
+                    Built with Apache Kafka for real-time communication and scalability.
+                </p>
+                <div class="hero-buttons">
+                    <a href="rider.html" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Request a Ride
+                    </a>
+                    <a href="driver.html" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Become a Driver
+                    </a>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number">100K+</div>
+                        <div class="stat-label">Rides Completed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">5K+</div>
+                        <div class="stat-label">Active Drivers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">99.9%</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="map-placeholder">
+                            <div class="pulse-marker"></div>
+                            <div class="route-line"></div>
+                            <div class="driver-marker"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section id="features" class="features-section">
+        <div class="container">
+            <h2 class="section-title">Kafka-Powered Features</h2>
+            <p class="section-subtitle">Real-time event streaming for seamless ride experiences</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M16 4v24M4 16h24" stroke="url(#gradient2)" stroke-width="3" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="gradient2">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#8b5cf6"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Real-Time Matching</h3>
+                    <p>Instant driver matching using Kafka streams with proximity-based algorithms</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="12" stroke="url(#gradient3)" stroke-width="3"/>
+                            <path d="M16 8v8l4 4" stroke="url(#gradient3)" stroke-width="3" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="gradient3">
+                                    <stop offset="0%" stop-color="#8b5cf6"/>
+                                    <stop offset="100%" stop-color="#ec4899"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Live Tracking</h3>
+                    <p>Track driver location in real-time with sub-second latency via Kafka topics</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect x="4" y="8" width="24" height="16" rx="2" stroke="url(#gradient4)" stroke-width="3"/>
+                            <path d="M8 16h16M12 12h8M12 20h8" stroke="url(#gradient4)" stroke-width="2" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="gradient4">
+                                    <stop offset="0%" stop-color="#ec4899"/>
+                                    <stop offset="100%" stop-color="#f59e0b"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Event Sourcing</h3>
+                    <p>Complete ride history and audit trail stored in Kafka for reliability</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M4 16h8l4-8 4 16 4-8h8" stroke="url(#gradient5)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <defs>
+                                <linearGradient id="gradient5">
+                                    <stop offset="0%" stop-color="#f59e0b"/>
+                                    <stop offset="100%" stop-color="#10b981"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Scalable Architecture</h3>
+                    <p>Microservices design with Kafka enables horizontal scaling</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M16 4L4 10l12 6 12-6L16 4z" stroke="url(#gradient6)" stroke-width="3" stroke-linejoin="round"/>
+                            <path d="M4 22l12 6 12-6M4 16l12 6 12-6" stroke="url(#gradient6)" stroke-width="3" stroke-linejoin="round"/>
+                            <defs>
+                                <linearGradient id="gradient6">
+                                    <stop offset="0%" stop-color="#10b981"/>
+                                    <stop offset="100%" stop-color="#06b6d4"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Microservices</h3>
+                    <p>Decoupled services for rides, drivers, matching, and location tracking</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="12" stroke="url(#gradient7)" stroke-width="3"/>
+                            <path d="M16 10v6l4 4" stroke="url(#gradient7)" stroke-width="3" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="gradient7">
+                                    <stop offset="0%" stop-color="#06b6d4"/>
+                                    <stop offset="100%" stop-color="#6366f1"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Fast Response</h3>
+                    <p>Sub-100ms response times with optimized Kafka consumer groups</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="architecture" class="architecture-section">
+        <div class="container">
+            <h2 class="section-title">System Architecture</h2>
+            <p class="section-subtitle">Event-driven microservices powered by Apache Kafka</p>
+            
+            <div class="architecture-diagram">
+                <div class="arch-layer">
+                    <div class="arch-title">Frontend Layer</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box">Rider App</div>
+                        <div class="arch-box">Driver App</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-layer">
+                    <div class="arch-title">API Gateway</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box primary">FastAPI Gateway</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-layer">
+                    <div class="arch-title">Kafka Message Broker</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box kafka">ride-requests</div>
+                        <div class="arch-box kafka">driver-locations</div>
+                        <div class="arch-box kafka">ride-matches</div>
+                        <div class="arch-box kafka">ride-updates</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-layer">
+                    <div class="arch-title">Microservices</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box service">Ride Service</div>
+                        <div class="arch-box service">Driver Service</div>
+                        <div class="arch-box service">Matching Service</div>
+                        <div class="arch-box service">Location Service</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-layer">
+                    <div class="arch-title">Data Layer</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box">SQLite Database</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="demo-section">
+        <div class="container">
+            <h2 class="section-title">Try It Now</h2>
+            <p class="section-subtitle">Experience the power of Kafka in action</p>
+            
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <div class="demo-icon rider-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <circle cx="24" cy="24" r="20" fill="url(#gradientRider)"/>
+                            <path d="M24 18c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6z" fill="white"/>
+                            <defs>
+                                <linearGradient id="gradientRider">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#8b5cf6"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Rider Interface</h3>
+                    <p>Request rides, track drivers in real-time, and view ride history</p>
+                    <a href="rider.html" class="demo-btn">Open Rider App →</a>
+                </div>
+
+                <div class="demo-card">
+                    <div class="demo-icon driver-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <circle cx="24" cy="24" r="20" fill="url(#gradientDriver)"/>
+                            <rect x="14" y="19" width="20" height="10" rx="2" fill="white"/>
+                            <defs>
+                                <linearGradient id="gradientDriver">
+                                    <stop offset="0%" stop-color="#10b981"/>
+                                    <stop offset="100%" stop-color="#06b6d4"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Driver Interface</h3>
+                    <p>Accept rides, update location, and manage availability status</p>
+                    <a href="driver.html" class="demo-btn">Open Driver App →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                        <rect width="40" height="40" rx="8" fill="url(#gradientFooter)"/>
+                        <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M12 26L18 20L24 26L30 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="gradientFooter">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>UberKafka</span>
+                </div>
+                <p class="footer-text">
+                    Built with Python, FastAPI, and Apache Kafka<br>
+                    Demonstrating real-time event-driven microservices architecture
+                </p>
+                <div class="footer-links">
+                    <a href="https://kafka.apache.org" target="_blank">Apache Kafka</a>
+                    <a href="https://fastapi.tiangolo.com" target="_blank">FastAPI</a>
+                    <a href="https://github.com" target="_blank">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

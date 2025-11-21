@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rider App - UberKafka</title>
+    <meta name="description" content="Request rides and track your driver in real-time">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="8" fill="url(#gradient1)" />
+                    <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M12 26L18 20L24 26L30 20" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <defs>
+                        <linearGradient id="gradient1" x1="0" y1="0" x2="40" y2="40">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#8b5cf6" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>UberKafka - Rider</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="driver.html">Driver App</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container">
+        <div class="container">
+            <div class="app-header">
+                <h1 class="app-title">Request a Ride</h1>
+                <p style="color: var(--text-secondary); font-size: 18px;">
+                    Enter your pickup and destination to find nearby drivers
+                </p>
+            </div>
+
+            <!-- Rider Selection -->
+            <div class="form-card" id="riderSelectionCard">
+                <h2 style="margin-bottom: 24px;">Select Your Profile</h2>
+                <div class="form-group">
+                    <label for="riderSelect">Choose Rider:</label>
+                    <select id="riderSelect" required>
+                        <option value="">Loading riders...</option>
+                    </select>
+                </div>
+                <button class="submit-btn" onclick="selectRider()">Continue</button>
+            </div>
+
+            <!-- Ride Request Form -->
+            <div class="form-card" id="rideRequestCard" style="display: none;">
+                <h2 style="margin-bottom: 24px;">Ride Details</h2>
+
+                <div class="form-group">
+                    <label for="pickupAddress">Pickup Address:</label>
+                    <input type="text" id="pickupAddress" placeholder="Enter pickup location" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="pickupLat">Pickup Latitude:</label>
+                    <input type="number" id="pickupLat" step="0.000001" placeholder="40.7128" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="pickupLon">Pickup Longitude:</label>
+                    <input type="number" id="pickupLon" step="0.000001" placeholder="-74.0060" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="destAddress">Destination Address:</label>
+                    <input type="text" id="destAddress" placeholder="Enter destination" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="destLat">Destination Latitude:</label>
+                    <input type="number" id="destLat" step="0.000001" placeholder="40.7580" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="destLon">Destination Longitude:</label>
+                    <input type="number" id="destLon" step="0.000001" placeholder="-73.9855" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="vehicleType">Vehicle Type:</label>
+                    <select id="vehicleType" required>
+                        <option value="bike">Bike 🏍️ - Economy</option>
+                        <option value="sedan" selected>Sedan 🚗 - Comfort</option>
+                        <option value="suv">SUV 🚙 - Premium</option>
+                    </select>
+                </div>
+
+                <button class="submit-btn" onclick="requestRide()">Request Ride</button>
+                <button class="btn btn-secondary" style="margin-top: 16px; width: 100%;" onclick="backToSelection()">
+                    ← Back
+                </button>
+            </div>
+
+            <!-- Current Ride Status -->
+            <div class="status-card" id="rideStatusCard" style="display: none;">
+                <h2 style="margin-bottom: 24px;">Current Ride</h2>
+                <div id="rideStatus"></div>
+                <button class="submit-btn" style="margin-top: 24px;" onclick="checkRideStatus()">
+                    Refresh Status
+                </button>
+                <button class="btn btn-secondary" style="margin-top: 16px; width: 100%;" onclick="newRide()">
+                    Request New Ride
+                </button>
+            </div>
+
+            <!-- Ride History -->
+            <div class="form-card" id="rideHistoryCard" style="display: none; margin-top: 32px;">
+                <h2 style="margin-bottom: 24px;">Your Ride History</h2>
+                <div id="rideHistory"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let selectedRiderId = null;
+        let currentRideId = null;
+
+        // Load riders on page load
+        async function loadRiders() {
+            try {
+                // For demo, we'll create a simple rider list
+                // In production, this would fetch from API
+                const riderSelect = document.getElementById('riderSelect');
+                riderSelect.innerHTML = `
+                    <option value="">Select a rider...</option>
+                    <option value="1">Alice Brown (alice@example.com)</option>
+                    <option value="2">Bob Wilson (bob@example.com)</option>
+                    <option value="new">+ Create New Rider</option>
+                `;
+            } catch (error) {
+                showError('Failed to load riders');
+            }
+        }
+
+        function selectRider() {
+            const riderSelect = document.getElementById('riderSelect');
+            selectedRiderId = riderSelect.value;
+
+            if (!selectedRiderId) {
+                showError('Please select a rider');
+                return;
+            }
+
+            if (selectedRiderId === 'new') {
+                showError('Create rider feature coming soon. Please select an existing rider.');
+                return;
+            }
+
+            document.getElementById('riderSelectionCard').style.display = 'none';
+            document.getElementById('rideRequestCard').style.display = 'block';
+            loadRideHistory();
+        }
+
+        function backToSelection() {
+            document.getElementById('rideRequestCard').style.display = 'none';
+            document.getElementById('riderSelectionCard').style.display = 'block';
+            selectedRiderId = null;
+        }
+
+        async function requestRide() {
+            const rideData = {
+                rider_id: parseInt(selectedRiderId),
+                pickup_address: document.getElementById('pickupAddress').value,
+                pickup_lat: parseFloat(document.getElementById('pickupLat').value),
+                pickup_lon: parseFloat(document.getElementById('pickupLon').value),
+                destination_address: document.getElementById('destAddress').value,
+                destination_lat: parseFloat(document.getElementById('destLat').value),
+                destination_lon: parseFloat(document.getElementById('destLon').value),
+                vehicle_type: document.getElementById('vehicleType').value,
+            };
+
+            // Validate
+            if (!rideData.pickup_address || !rideData.destination_address) {
+                showError('Please fill in all address fields');
+                return;
+            }
+
+            if (isNaN(rideData.pickup_lat) || isNaN(rideData.pickup_lon) ||
+                isNaN(rideData.destination_lat) || isNaN(rideData.destination_lon)) {
+                showError('Please enter valid coordinates');
+                return;
+            }
+
+            try {
+                const response = await apiCall('/rides', 'POST', rideData);
+                currentRideId = response.ride_id;
+
+                showSuccess('Ride requested successfully! Finding nearby drivers...');
+
+                document.getElementById('rideRequestCard').style.display = 'none';
+                document.getElementById('rideStatusCard').style.display = 'block';
+
+                // Start checking ride status
+                setTimeout(checkRideStatus, 2000);
+            } catch (error) {
+                alert('Error: ' + error.message);
+                showError('Failed to request ride. Please try again.');
+                console.error(error);
+            }
+        }
+
+        async function checkRideStatus() {
+            if (!currentRideId) return;
+
+            try {
+                const ride = await apiCall(`/rides/${currentRideId}`);
+                displayRideStatus(ride);
+            } catch (error) {
+                showError('Failed to fetch ride status');
+                console.error(error);
+            }
+        }
+
+        function displayRideStatus(ride) {
+            const statusDiv = document.getElementById('rideStatus');
+
+            const statusColors = {
+                'requested': 'offline',
+                'matched': 'matched',
+                'accepted': 'online',
+                'started': 'online',
+                'completed': 'offline'
+            };
+
+            const statusMessages = {
+                'requested': '🔍 Searching for drivers...',
+                'matched': '✅ Driver found! Waiting for acceptance...',
+                'accepted': '🚗 Driver is on the way!',
+                'started': '🎯 Ride in progress',
+                'completed': '✓ Ride completed'
+            };
+
+            statusDiv.innerHTML = `
+                <div class="status-badge ${statusColors[ride.status]}">
+                    ${statusMessages[ride.status] || ride.status}
+                </div>
+                
+                <div style="margin-top: 24px;">
+                    <p><strong>Ride ID:</strong> #${ride.id}</p>
+                    <p><strong>Pickup:</strong> ${ride.pickup_address}</p>
+                    <p><strong>Destination:</strong> ${ride.destination_address}</p>
+                    ${ride.driver_id ? `<p><strong>Driver ID:</strong> ${ride.driver_id}</p>` : ''}
+                    ${ride.fare ? `<p><strong>Estimated Fare:</strong> $${ride.fare.toFixed(2)}</p>` : ''}
+                    ${ride.distance ? `<p><strong>Distance:</strong> ${ride.distance.toFixed(2)} km</p>` : ''}
+                    <p><strong>Requested:</strong> ${formatDate(ride.requested_at)}</p>
+                    ${ride.completed_at ? `<p><strong>Completed:</strong> ${formatDate(ride.completed_at)}</p>` : ''}
+                </div>
+            `;
+
+            // Auto-refresh if ride is in progress
+            if (['requested', 'matched', 'accepted', 'started'].includes(ride.status)) {
+                setTimeout(checkRideStatus, 5000);
+            }
+        }
+
+        function newRide() {
+            currentRideId = null;
+            document.getElementById('rideStatusCard').style.display = 'none';
+            document.getElementById('rideRequestCard').style.display = 'block';
+
+            // Clear form
+            document.getElementById('pickupAddress').value = '';
+            document.getElementById('destAddress').value = '';
+            document.getElementById('pickupLat').value = '';
+            document.getElementById('pickupLon').value = '';
+            document.getElementById('destLat').value = '';
+            document.getElementById('destLon').value = '';
+        }
+
+        async function loadRideHistory() {
+            if (!selectedRiderId) return;
+
+            try {
+                const rides = await apiCall(`/rides/rider/${selectedRiderId}`);
+                displayRideHistory(rides);
+                document.getElementById('rideHistoryCard').style.display = 'block';
+            } catch (error) {
+                console.error('Failed to load ride history:', error);
+            }
+        }
+
+        function displayRideHistory(rides) {
+            const historyDiv = document.getElementById('rideHistory');
+
+            if (rides.length === 0) {
+                historyDiv.innerHTML = '<p style="color: var(--text-secondary);">No previous rides</p>';
+                return;
+            }
+
+            historyDiv.innerHTML = rides.slice(0, 5).map(ride => `
+                <div class="ride-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 8px;">
+                                ${ride.pickup_address} → ${ride.destination_address}
+                            </p>
+                            <p style="font-size: 14px; color: var(--text-secondary);">
+                                ${formatDate(ride.requested_at)}
+                            </p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="status-badge ${ride.status === 'completed' ? 'offline' : 'online'}" 
+                                 style="font-size: 12px; padding: 4px 12px;">
+                                ${ride.status}
+                            </div>
+                            ${ride.fare ? `<p style="font-weight: 700; margin-top: 8px;">$${ride.fare.toFixed(2)}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        loadRiders();
+    </script>
+</body>
+
+</html>

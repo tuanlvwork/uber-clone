@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver App - UberKafka</title>
+    <meta name="description" content="Accept rides and manage your driver status">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="8" fill="url(#gradient1)" />
+                    <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M12 26L18 20L24 26L30 20" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <defs>
+                        <linearGradient id="gradient1" x1="0" y1="0" x2="40" y2="40">
+                            <stop offset="0%" stop-color="#10b981" />
+                            <stop offset="100%" stop-color="#06b6d4" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>UberKafka - Driver</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="rider.html">Rider App</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container">
+        <div class="container">
+            <div class="app-header">
+                <h1 class="app-title"
+                    style="background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                    Driver Dashboard
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 18px;">
+                    Manage your availability and accept ride requests
+                </p>
+            </div>
+
+            <!-- Driver Selection -->
+            <div class="form-card" id="driverSelectionCard">
+                <h2 style="margin-bottom: 24px;">Select Your Profile</h2>
+                <div class="form-group">
+                    <label for="driverSelect">Choose Driver:</label>
+                    <select id="driverSelect" required>
+                        <option value="">Loading drivers...</option>
+                    </select>
+                </div>
+                <button class="submit-btn" style="background: linear-gradient(135deg, #10b981, #06b6d4);"
+                    onclick="selectDriver()">
+                    Continue
+                </button>
+            </div>
+
+            <!-- Driver Dashboard -->
+            <div id="driverDashboard" style="display: none;">
+                <!-- Status Card -->
+                <div class="status-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="margin-bottom: 8px;">Driver Status</h2>
+                            <p id="driverInfo" style="color: var(--text-secondary);"></p>
+                        </div>
+                        <div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="onlineToggle" onchange="toggleOnlineStatus()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="statusBadgeContainer">
+                        <span class="status-badge offline">Offline</span>
+                    </div>
+
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 16px;">Update Location</h3>
+                        <div class="form-group">
+                            <label for="currentLat">Current Latitude:</label>
+                            <input type="number" id="currentLat" step="0.000001" placeholder="40.7128">
+                        </div>
+                        <div class="form-group">
+                            <label for="currentLon">Current Longitude:</label>
+                            <input type="number" id="currentLon" step="0.000001" placeholder="-74.0060">
+                        </div>
+                        <button class="submit-btn" style="background: linear-gradient(135deg, #10b981, #06b6d4);"
+                            onclick="updateLocation()">
+                            Update Location
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Available Rides -->
+                <div class="form-card" style="margin-top: 32px;">
+                    <h2 style="margin-bottom: 24px;">Available Rides</h2>
+                    <div id="availableRides">
+                        <p style="color: var(--text-secondary);">Go online to see available rides</p>
+                    </div>
+                </div>
+
+                <!-- Active Ride -->
+                <div class="status-card" id="activeRideCard" style="display: none; margin-top: 32px;">
+                    <h2 style="margin-bottom: 24px;">Active Ride</h2>
+                    <div id="activeRideDetails"></div>
+                </div>
+
+                <!-- Ride History -->
+                <div class="form-card" style="margin-top: 32px;">
+                    <h2 style="margin-bottom: 24px;">Your Ride History</h2>
+                    <div id="rideHistory">
+                        <p style="color: var(--text-secondary);">No completed rides yet</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" style="margin-top: 32px; width: 100%;" onclick="backToSelection()">
+                    ← Switch Driver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let selectedDriverId = null;
+        let isOnline = false;
+        let activeRideId = null;
+        let locationUpdateInterval = null;
+
+        // Load drivers on page load
+        async function loadDrivers() {
+            try {
+                const driverSelect = document.getElementById('driverSelect');
+                driverSelect.innerHTML = `
+                    <option value="">Select a driver...</option>
+                    <option value="1">John Doe - Sedan (ABC-1234)</option>
+                    <option value="2">Jane Smith - SUV (XYZ-5678)</option>
+                    <option value="3">Mike Johnson - Bike (MNO-9012)</option>
+                    <option value="new">+ Register as New Driver</option>
+                `;
+            } catch (error) {
+                showError('Failed to load drivers');
+            }
+        }
+
+        async function selectDriver() {
+            const driverSelect = document.getElementById('driverSelect');
+            selectedDriverId = driverSelect.value;
+
+            if (!selectedDriverId) {
+                showError('Please select a driver');
+                return;
+            }
+
+            if (selectedDriverId === 'new') {
+                showError('Register driver feature coming soon. Please select an existing driver.');
+                return;
+            }
+
+            try {
+                const driver = await apiCall(`/drivers/${selectedDriverId}`);
+                displayDriverDashboard(driver);
+            } catch (error) {
+                showError('Failed to load driver information');
+            }
+        }
+
+        function displayDriverDashboard(driver) {
+            document.getElementById('driverSelectionCard').style.display = 'none';
+            document.getElementById('driverDashboard').style.display = 'block';
+
+            const driverInfo = document.getElementById('driverInfo');
+            driverInfo.textContent = `${driver.name} • ${driver.vehicle_type.toUpperCase()} • ${driver.vehicle_number}`;
+
+            // Set initial location
+            if (driver.current_lat && driver.current_lon) {
+                document.getElementById('currentLat').value = driver.current_lat;
+                document.getElementById('currentLon').value = driver.current_lon;
+            }
+
+            // Set online status
+            isOnline = driver.is_online;
+            document.getElementById('onlineToggle').checked = isOnline;
+            updateStatusBadge();
+
+            loadRideHistory();
+        }
+
+        function backToSelection() {
+            if (isOnline) {
+                if (!confirm('You are currently online. Going back will set you offline. Continue?')) {
+                    return;
+                }
+                toggleOnlineStatus();
+            }
+
+            document.getElementById('driverDashboard').style.display = 'none';
+            document.getElementById('driverSelectionCard').style.display = 'block';
+            selectedDriverId = null;
+        }
+
+        async function toggleOnlineStatus() {
+            const newStatus = document.getElementById('onlineToggle').checked;
+
+            try {
+                await apiCall('/drivers/availability', 'POST', {
+                    driver_id: parseInt(selectedDriverId),
+                    is_online: newStatus
+                });
+
+                isOnline = newStatus;
+                updateStatusBadge();
+
+                if (newStatus) {
+                    showSuccess('You are now online and available for rides!');
+                    startLocationUpdates();
+                } else {
+                    showSuccess('You are now offline');
+                    stopLocationUpdates();
+                }
+            } catch (error) {
+                showError('Failed to update availability status');
+                document.getElementById('onlineToggle').checked = !newStatus;
+            }
+        }
+
+        function updateStatusBadge() {
+            const badge = document.getElementById('statusBadgeContainer');
+            if (isOnline) {
+                badge.innerHTML = '<span class="status-badge online">✓ Online - Available for Rides</span>';
+            } else {
+                badge.innerHTML = '<span class="status-badge offline">● Offline</span>';
+            }
+        }
+
+        async function updateLocation() {
+            const lat = parseFloat(document.getElementById('currentLat').value);
+            const lon = parseFloat(document.getElementById('currentLon').value);
+
+            if (isNaN(lat) || isNaN(lon)) {
+                showError('Please enter valid coordinates');
+                return;
+            }
+
+            try {
+                await apiCall('/drivers/location', 'POST', {
+                    driver_id: parseInt(selectedDriverId),
+                    lat: lat,
+                    lon: lon
+                });
+
+                showSuccess('Location updated successfully');
+            } catch (error) {
+                showError('Failed to update location');
+            }
+        }
+
+        function startLocationUpdates() {
+            // Simulate location updates every 10 seconds
+            locationUpdateInterval = setInterval(() => {
+                const lat = parseFloat(document.getElementById('currentLat').value);
+                const lon = parseFloat(document.getElementById('currentLon').value);
+
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    // Add small random movement
+                    const newLat = lat + (Math.random() - 0.5) * 0.001;
+                    const newLon = lon + (Math.random() - 0.5) * 0.001;
+
+                    document.getElementById('currentLat').value = newLat.toFixed(6);
+                    document.getElementById('currentLon').value = newLon.toFixed(6);
+
+                    updateLocation();
+                }
+            }, 10000);
+        }
+
+        function stopLocationUpdates() {
+            if (locationUpdateInterval) {
+                clearInterval(locationUpdateInterval);
+                locationUpdateInterval = null;
+            }
+        }
+
+        async function acceptRide(rideId) {
+            try {
+                await apiCall('/rides/accept', 'POST', {
+                    driver_id: parseInt(selectedDriverId),
+                    ride_id: rideId
+                });
+
+                activeRideId = rideId;
+                showSuccess('Ride accepted! Navigate to pickup location.');
+                loadActiveRide();
+            } catch (error) {
+                showError('Failed to accept ride');
+            }
+        }
+
+        async function startRide() {
+            try {
+                await apiCall('/rides/start', 'POST', {
+                    driver_id: parseInt(selectedDriverId),
+                    ride_id: activeRideId
+                });
+
+                showSuccess('Ride started! Navigate to destination.');
+                loadActiveRide();
+            } catch (error) {
+                showError('Failed to start ride');
+            }
+        }
+
+        async function completeRide() {
+            const fare = prompt('Enter final fare amount:');
+            if (!fare || isNaN(parseFloat(fare))) {
+                showError('Invalid fare amount');
+                return;
+            }
+
+            try {
+                await apiCall('/rides/complete', 'POST', {
+                    driver_id: parseInt(selectedDriverId),
+                    ride_id: activeRideId,
+                    fare: parseFloat(fare)
+                });
+
+                showSuccess('Ride completed successfully!');
+                activeRideId = null;
+                document.getElementById('activeRideCard').style.display = 'none';
+                loadRideHistory();
+            } catch (error) {
+                showError('Failed to complete ride');
+            }
+        }
+
+        async function loadActiveRide() {
+            if (!activeRideId) return;
+
+            try {
+                const ride = await apiCall(`/rides/${activeRideId}`);
+                displayActiveRide(ride);
+            } catch (error) {
+                console.error('Failed to load active ride');
+            }
+        }
+
+        function displayActiveRide(ride) {
+            const card = document.getElementById('activeRideCard');
+            const details = document.getElementById('activeRideDetails');
+
+            card.style.display = 'block';
+
+            details.innerHTML = `
+                <div class="status-badge ${ride.status === 'started' ? 'online' : 'matched'}">
+                    ${ride.status === 'started' ? '🚗 In Progress' : '📍 Heading to Pickup'}
+                </div>
+                
+                <div style="margin-top: 24px;">
+                    <p><strong>Ride ID:</strong> #${ride.id}</p>
+                    <p><strong>Pickup:</strong> ${ride.pickup_address}</p>
+                    <p><strong>Destination:</strong> ${ride.destination_address}</p>
+                    ${ride.fare ? `<p><strong>Fare:</strong> $${ride.fare.toFixed(2)}</p>` : ''}
+                    ${ride.distance ? `<p><strong>Distance:</strong> ${ride.distance.toFixed(2)} km</p>` : ''}
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px;">
+                    ${ride.status === 'accepted' ? `
+                        <button class="submit-btn" onclick="startRide()" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+                            Start Ride
+                        </button>
+                    ` : ''}
+                    ${ride.status === 'started' ? `
+                        <button class="submit-btn" onclick="completeRide()" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+                            Complete Ride
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        async function loadRideHistory() {
+            if (!selectedDriverId) return;
+
+            try {
+                const rides = await apiCall(`/rides/driver/${selectedDriverId}`);
+                displayRideHistory(rides);
+            } catch (error) {
+                console.error('Failed to load ride history');
+            }
+        }
+
+        function displayRideHistory(rides) {
+            const historyDiv = document.getElementById('rideHistory');
+
+            if (rides.length === 0) {
+                historyDiv.innerHTML = '<p style="color: var(--text-secondary);">No completed rides yet</p>';
+                return;
+            }
+
+            const completedRides = rides.filter(r => r.status === 'completed');
+            const totalEarnings = completedRides.reduce((sum, r) => sum + (r.fare || 0), 0);
+
+            historyDiv.innerHTML = `
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--secondary-color); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                    <p style="color: var(--text-secondary); margin-bottom: 4px;">Total Earnings</p>
+                    <p style="font-size: 32px; font-weight: 800; color: var(--secondary-color);">
+                        $${totalEarnings.toFixed(2)}
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 14px;">
+                        ${completedRides.length} completed rides
+                    </p>
+                </div>
+                
+                ${rides.slice(0, 5).map(ride => `
+                    <div class="ride-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 8px;">
+                                    ${ride.pickup_address} → ${ride.destination_address}
+                                </p>
+                                <p style="font-size: 14px; color: var(--text-secondary);">
+                                    ${formatDate(ride.requested_at)}
+                                </p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="status-badge ${ride.status === 'completed' ? 'online' : 'offline'}" 
+                                     style="font-size: 12px; padding: 4px 12px;">
+                                    ${ride.status}
+                                </div>
+                                ${ride.fare ? `<p style="font-weight: 700; margin-top: 8px; color: var(--secondary-color);">+$${ride.fare.toFixed(2)}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Initialize
+        loadDrivers();
+    </script>
+</body>
+
+</html>
