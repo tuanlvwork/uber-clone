@@ -44,13 +44,20 @@ echo -e "${YELLOW}Installing dependencies...${NC}"
 pip install -q -r requirements.txt
 echo -e "${GREEN}✓ Dependencies installed${NC}"
 
-# Initialize database if it doesn't exist
-if [ ! -f "uber.db" ]; then
-    echo ""
-    echo -e "${YELLOW}Initializing database...${NC}"
-    python scripts/init_db.py
-    echo -e "${GREEN}✓ Database initialized${NC}"
-fi
+# Wait for PostgreSQL
+echo ""
+echo -e "${YELLOW}Waiting for PostgreSQL...${NC}"
+until python -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('localhost', 5432))" 2>/dev/null; do
+    echo "  Waiting for Postgres on port 5432..."
+    sleep 2
+done
+echo -e "${GREEN}✓ PostgreSQL is ready${NC}"
+
+# Initialize database
+echo ""
+echo -e "${YELLOW}Initializing database...${NC}"
+python scripts/init_db.py
+echo -e "${GREEN}✓ Database initialized${NC}"
 
 # Create logs directory
 mkdir -p logs
@@ -92,6 +99,13 @@ nohup python services/api_gateway.py > logs/api_gateway.log 2>&1 &
 API_PID=$!
 echo "  PID: $API_PID"
 
+sleep 2
+
+echo -e "${GREEN}Starting Payment Service...${NC}"
+nohup python services/payment_service.py > logs/payment_service.log 2>&1 &
+PAYMENT_PID=$!
+echo "  PID: $PAYMENT_PID"
+
 sleep 3
 
 # Start Frontend Server
@@ -102,7 +116,7 @@ PIDS+=($FRONTEND_PID)
 echo "  PID: $FRONTEND_PID"
 
 # Save PIDs for cleanup
-echo "$RIDE_PID,$DRIVER_PID,$MATCHING_PID,$LOCATION_PID,$API_PID,$FRONTEND_PID" > .service_pids
+echo "$RIDE_PID,$DRIVER_PID,$MATCHING_PID,$LOCATION_PID,$API_PID,$PAYMENT_PID,$FRONTEND_PID" > .service_pids
 
 echo ""
 echo "=================================================="

@@ -8,8 +8,9 @@ from datetime import datetime
 import os
 
 # Database setup
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///uber.db')
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Database setup
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://uber:uberpassword@localhost:5432/uberdb')
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

@@ -58,6 +58,28 @@ services:
     networks:
       - uber-network
 
+  postgres:
+    image: postgres:13
+    container_name: uber-postgres
+    environment:
+      POSTGRES_USER: uber
+      POSTGRES_PASSWORD: uberpassword
+      POSTGRES_DB: uberdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - uber-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uber"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 networks:
   uber-network:
     driver: bridge
+
+volumes:
+  postgres_data:

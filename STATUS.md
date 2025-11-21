@@ -6,6 +6,7 @@
 ✅ **uber-zookeeper** - Running (v5.5.1)
 ✅ **uber-kafka** - Running (v5.5.1) and READY
 ✅ **uber-kafka-ui** - Running (native ARM64)
+✅ **uber-postgres** - Configured (v13)
 
 ### Fixes Applied
 1. ✅ **Import conflict** - Renamed `kafka/` to `config/`
@@ -17,6 +18,8 @@
    - Used `kafka-python` 2.0.2
    - Configured `KAFKA_LISTENERS` explicitly
    - Used `127.0.0.1:9093` for bootstrap servers
+6. ✅ **Database** - Migrated from SQLite to PostgreSQL
+7. ✅ **Payment Integration** - Added Payment Service & Kafka topics
 
 ### Kafka Details
 - **Status**: ✅ **CONNECTED**
@@ -24,6 +27,12 @@
 - **Version**: 5.5.1 (Broker 2.5)
 - **Topics**: Auto-create enabled
 - **Client**: kafka-python 2.0.2
+
+### Database Details
+- **Type**: PostgreSQL 13
+- **Host**: localhost:5432
+- **User**: uber
+- **Database**: uberdb
 
 ---
 
