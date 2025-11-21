@@ -8,16 +8,20 @@ import os
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 import uvicorn
 from datetime import datetime
+import asyncio
+import threading
 
 from models.database import SessionLocal, Driver, Rider, Ride, init_db
 from services.ride_service import RideService
 from services.driver_service import DriverService
+from services.websocket_service import manager
+from config.kafka_config import KafkaConsumerWrapper, TOPICS
 
 # Initialize FastAPI app
 app = FastAPI(title="Uber Clone API", version="1.0.0")
@@ -284,6 +288,16 @@ async def complete_ride(action: RideAction):
     raise HTTPException(status_code=500, detail="Failed to complete ride")
 
 
+# FastAPI startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize Kafka consumers on startup"""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Starting Kafka consumers for WebSocket broadcasting...")
+    start_kafka_consumers()
+
+
 @app.get("/")
 async def root():
     """Root endpoint"""
@@ -293,14 +307,202 @@ async def root():
         "endpoints": {
             "riders": "/api/riders",
             "drivers": "/api/drivers",
-            "rides": "/api/rides"
+            "rides": "/api/rides",
+            "websocket": {
+                "rider": "/ws/rider/{rider_id}",
+                "driver": "/ws/driver/{driver_id}",
+                "ride": "/ws/ride/{ride_id}",
+                "nearby_drivers": "/ws/nearby-drivers"
+            }
         }
     }
+
+
+# WebSocket endpoints
+@app.websocket("/ws/rider/{rider_id}")
+async def websocket_rider(websocket: WebSocket, rider_id: int):
+    """WebSocket connection for rider to receive real-time updates"""
+    await manager.connect_rider(rider_id, websocket)
+    try:
+        while True:
+            # Keep connection alive and handle any incoming messages
+            data = await websocket.receive_text()
+            # Echo back for heartbeat
+            await websocket.send_json({"type": "heartbeat", "status": "connected"})
+    except WebSocketDisconnect:
+        manager.disconnect_rider(rider_id, websocket)
+
+
+@app.websocket("/ws/driver/{driver_id}")
+async def websocket_driver(websocket: WebSocket, driver_id: int):
+    """WebSocket connection for driver to receive real-time updates"""
+    await manager.connect_driver(driver_id, websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_json({"type": "heartbeat", "status": "connected"})
+    except WebSocketDisconnect:
+        manager.disconnect_driver(driver_id, websocket)
+
+
+@app.websocket("/ws/ride/{ride_id}")
+async def websocket_ride(websocket: WebSocket, ride_id: int):
+    """WebSocket connection for ride-specific updates"""
+    await manager.connect_ride(ride_id, websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_json({"type": "heartbeat", "status": "connected"})
+    except WebSocketDisconnect:
+        manager.disconnect_ride(ride_id, websocket)
+
+
+@app.websocket("/ws/nearby-drivers")
+async def websocket_nearby_drivers(websocket: WebSocket):
+    """WebSocket connection to get all nearby drivers in real-time"""
+    await websocket.accept()
+    
+    # Send initial driver locations
+    await manager.broadcast_all_driver_locations(websocket)
+    
+    try:
+        while True:
+            # Wait for location requests from client
+            data = await websocket.receive_json()
+            if data.get("type") == "get_nearby":
+                lat = data.get("lat")
+                lon = data.get("lon")
+                radius = data.get("radius", 5)
+                
+                nearby = manager.get_nearby_drivers(lat, lon, radius)
+                await websocket.send_json({
+                    "type": "nearby_drivers",
+                    "drivers": nearby,
+                    "count": len(nearby)
+                })
+            elif data.get("type") == "get_all":
+                await manager.broadcast_all_driver_locations(websocket)
+    except WebSocketDisconnect:
+        pass
+
+
+@app.get("/api/drivers/nearby")
+async def get_nearby_drivers(lat: float, lon: float, radius: float = 5):
+    """REST endpoint to get nearby drivers"""
+    nearby = manager.get_nearby_drivers(lat, lon, radius)
+    return {
+        "drivers": nearby,
+        "count": len(nearby)
+    }
+
+
+# Kafka consumers for WebSocket broadcasting
+def handle_location_update(message: dict):
+    """Handle driver location updates from Kafka"""
+    driver_id = message.get('driver_id')
+    
+    # Update stored location
+    manager.update_driver_location(driver_id, message)
+    
+    # Broadcast to all relevant connections
+    asyncio.run(manager.broadcast_to_driver(driver_id, {
+        "type": "location_updated",
+        "lat": message.get('lat'),
+        "lon": message.get('lon'),
+        "timestamp": message.get('timestamp')
+    }))
+
+
+def handle_availability_update(message: dict):
+    """Handle driver availability updates from Kafka"""
+    driver_id = message.get('driver_id')
+    is_online = message.get('is_online')
+    
+    if not is_online:
+        manager.remove_driver_location(driver_id)
+    
+    asyncio.run(manager.broadcast_to_driver(driver_id, {
+        "type": "availability_updated",
+        "is_online": is_online,
+        "timestamp": message.get('timestamp')
+    }))
+
+
+def handle_ride_update(message: dict):
+    """Handle ride status updates from Kafka"""
+    ride_id = message.get('ride_id')
+    driver_id = message.get('driver_id')
+    status = message.get('status')
+    
+    # Get ride from database to find rider_id
+    db = SessionLocal()
+    try:
+        ride = db.query(Ride).filter(Ride.id == ride_id).first()
+        if ride:
+            # Broadcast to rider
+            asyncio.run(manager.broadcast_to_rider(ride.rider_id, {
+                "type": "ride_update",
+                "ride_id": ride_id,
+                "status": status,
+                "driver_id": driver_id,
+                "timestamp": message.get('timestamp')
+            }))
+            
+            # Broadcast to ride-specific connections
+            asyncio.run(manager.broadcast_to_ride(ride_id, {
+                "type": "ride_update",
+                "ride_id": ride_id,
+                "status": status,
+                "timestamp": message.get('timestamp')
+            }))
+    finally:
+        db.close()
+
+
+def start_kafka_consumers():
+    """Start Kafka consumers in background threads"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Consumer for driver locations
+        location_consumer = KafkaConsumerWrapper(
+            TOPICS['DRIVER_LOCATIONS'],
+            'api-gateway-location-group',
+            handle_location_update
+        )
+        
+        # Consumer for driver availability
+        availability_consumer = KafkaConsumerWrapper(
+            TOPICS['DRIVER_AVAILABILITY'],
+            'api-gateway-availability-group',
+            handle_availability_update
+        )
+        
+        # Consumer for ride updates
+        ride_consumer = KafkaConsumerWrapper(
+            TOPICS['RIDE_UPDATES'],
+            'api-gateway-ride-group',
+            handle_ride_update
+        )
+        
+        # Start consumers in separate threads
+        location_thread = threading.Thread(target=location_consumer.start_consuming, daemon=True)
+        availability_thread = threading.Thread(target=availability_consumer.start_consuming, daemon=True)
+        ride_thread = threading.Thread(target=ride_consumer.start_consuming, daemon=True)
+        
+        location_thread.start()
+        availability_thread.start()
+        ride_thread.start()
+        
+        logger.info("Kafka consumers started for WebSocket broadcasting")
+    except Exception as e:
+        logger.error(f"Error starting Kafka consumers: {e}")
 
 
 if __name__ == "__main__":
     # Initialize database
     init_db()
     
-    # Run FastAPI server
+    # Run FastAPI server (Kafka consumers start via @app.on_event("startup"))
     uvicorn.run(app, host="0.0.0.0", port=8001)

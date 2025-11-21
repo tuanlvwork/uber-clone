@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tracking - UberKafka</title>
+    <meta name="description" content="Track your ride and drivers in real-time">
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Leaflet CSS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 32px;
+        }
+
+        .map-container {
+            position: relative;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            min-width: 250px;
+        }
+
+        .driver-marker {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .driver-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .driver-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .driver-item:hover {
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .connection-status.connected {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="8" fill="url(#gradient1)" />
+                    <path d="M12 20L18 14L24 20L30 14" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M12 26L18 20L24 26L30 20" stroke="white" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <defs>
+                        <linearGradient id="gradient1" x1="0" y1="0" x2="40" y2="40">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#8b5cf6" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>UberKafka - Live Tracking</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="rider.html">Rider App</a>
+                <a href="driver.html">Driver App</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container">
+        <div class="container">
+            <div class="app-header">
+                <h1 class="app-title">Real-Time Location Tracking</h1>
+                <p style="color: var(--text-secondary); font-size: 18px;">
+                    Track all active drivers and rides in real-time with WebSocket connections
+                </p>
+                <div style="margin-top: 16px;">
+                    <span class="connection-status disconnected" id="connectionStatus">
+                        <span class="pulse-dot"></span>
+                        Connecting...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="onlineDriversCount">0</div>
+                    <div class="stat-label">Online Drivers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalUpdates">0</div>
+                    <div class="stat-label">Location Updates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgUpdateTime">0ms</div>
+                    <div class="stat-label">Avg Update Time</div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="form-card">
+                <h2 style="margin-bottom: 24px;">Live Map</h2>
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Online Drivers List -->
+            <div class="form-card" style="margin-top: 32px;">
+                <h2 style="margin-bottom: 24px;">Online Drivers</h2>
+                <div class="driver-list" id="driverList">
+                    <p style="color: var(--text-secondary);">Waiting for driver data...</p>
+                </div>
+            </div>
+
+            <!-- Recent Updates -->
+            <div class="form-card" style="margin-top: 32px;">
+                <h2 style="margin-bottom: 24px;">Recent Updates</h2>
+                <div id="recentUpdates" style="max-height: 300px; overflow-y: auto;">
+                    <p style="color: var(--text-secondary);">No updates yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Get WebSocket URL based on environment
+        function getWebSocketUrl() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.hostname;
+
+            // For local development
+            if (host === 'localhost' || host === '127.0.0.1') {
+                return 'ws://localhost:8001';
+            }
+
+            // For production (Kubernetes/Minikube)
+            const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
+            return `${protocol}//${host}:8001`;
+        }
+
+        // Configuration
+        const WS_URL = getWebSocketUrl();
+        let ws = null;
+        let map = null;
+        let driverMarkers = {};
+        let updateCount = 0;
+        let updateTimes = [];
+
+
+        // Initialize map
+        function initMap() {
+            // Center on New York by default
+            map = L.map('map').setView([40.7128, -74.0060], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add custom icons
+            window.driverIcon = L.divIcon({
+                className: 'driver-marker',
+                html: '🚗',
+                iconSize: [40, 40]
+            });
+        }
+
+        // WebSocket connection
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket(`${WS_URL}/ws/nearby-drivers`);
+
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    updateConnectionStatus(true);
+
+                    // Request all drivers
+                    ws.send(JSON.stringify({ type: 'get_all' }));
+
+                    // Set up periodic refresh
+                    setInterval(() => {
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ type: 'get_all' }));
+                        }
+                    }, 5000);
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateConnectionStatus(false);
+                };
+
+                ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    updateConnectionStatus(false);
+
+                    // Attempt to reconnect after 3 seconds
+                    setTimeout(connectWebSocket, 3000);
+                };
+            } catch (error) {
+                console.error('Error connecting WebSocket:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            const startTime = Date.now();
+
+            switch (data.type) {
+                case 'all_driver_locations':
+                    updateAllDrivers(data.drivers);
+                    break;
+                case 'nearby_drivers':
+                    updateAllDrivers(data.drivers);
+                    break;
+                case 'location_update':
+                    updateSingleDriver(data);
+                    break;
+            }
+
+            // Track update time
+            const updateTime = Date.now() - startTime;
+            updateTimes.push(updateTime);
+            if (updateTimes.length > 100) updateTimes.shift();
+
+            updateCount++;
+            updateStatistics();
+        }
+
+        function updateAllDrivers(drivers) {
+            // Clear existing markers
+            Object.values(driverMarkers).forEach(marker => {
+                map.removeLayer(marker);
+            });
+            driverMarkers = {};
+
+            // Add new markers
+            drivers.forEach(driver => {
+                addOrUpdateDriver(driver.driver_id, driver);
+            });
+
+            // Update driver list
+            updateDriverList(drivers);
+
+            // Add to recent updates
+            addRecentUpdate(`Updated ${drivers.length} driver locations`);
+        }
+
+        function addOrUpdateDriver(driverId, driverData) {
+            const lat = driverData.lat || driverData.location?.lat;
+            const lon = driverData.lon || driverData.location?.lon;
+            const vehicleType = driverData.vehicle_type || driverData.location?.vehicle_type || 'sedan';
+
+            if (!lat || !lon) return;
+
+            // Remove existing marker
+            if (driverMarkers[driverId]) {
+                map.removeLayer(driverMarkers[driverId]);
+            }
+
+            // Create new marker
+            const vehicleEmoji = {
+                'bike': '🏍️',
+                'sedan': '🚗',
+                'suv': '🚙'
+            };
+
+            const icon = L.divIcon({
+                className: 'driver-marker',
+                html: vehicleEmoji[vehicleType] || '🚗',
+                iconSize: [40, 40]
+            });
+
+            const marker = L.marker([lat, lon], { icon: icon })
+                .bindPopup(`
+                    <div style="text-align: center;">
+                        <strong>Driver ${driverId}</strong><br>
+                        Vehicle: ${vehicleType.toUpperCase()}<br>
+                        ${driverData.distance ? `Distance: ${driverData.distance} km` : ''}
+                    </div>
+                `)
+                .addTo(map);
+
+            driverMarkers[driverId] = marker;
+        }
+
+        function updateDriverList(drivers) {
+            const driverList = document.getElementById('driverList');
+
+            if (drivers.length === 0) {
+                driverList.innerHTML = '<p style="color: var(--text-secondary);">No drivers online</p>';
+                return;
+            }
+
+            driverList.innerHTML = drivers.map(driver => {
+                const lat = driver.lat || driver.location?.lat;
+                const lon = driver.lon || driver.location?.lon;
+                const vehicleType = driver.vehicle_type || driver.location?.vehicle_type || 'sedan';
+
+                return `
+                    <div class="driver-item" onclick="focusDriver(${driver.driver_id})">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Driver ${driver.driver_id}</strong>
+                                <p style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">
+                                    ${vehicleType.toUpperCase()} • 
+                                    Lat: ${lat ? lat.toFixed(6) : 'N/A'}, Lon: ${lon ? lon.toFixed(6) : 'N/A'}
+                                </p>
+                            </div>
+                            <div>
+                                ${driver.distance ? `<span class="status-badge online">${driver.distance} km</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function focusDriver(driverId) {
+            const marker = driverMarkers[driverId];
+            if (marker) {
+                map.setView(marker.getLatLng(), 15);
+                marker.openPopup();
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (connected) {
+                statusElement.className = 'connection-status connected';
+                statusElement.innerHTML = '<span class="pulse-dot"></span> Connected';
+            } else {
+                statusElement.className = 'connection-status disconnected';
+                statusElement.innerHTML = '<span class="pulse-dot"></span> Disconnected';
+            }
+        }
+
+        function updateStatistics() {
+            document.getElementById('onlineDriversCount').textContent = Object.keys(driverMarkers).length;
+            document.getElementById('totalUpdates').textContent = updateCount;
+
+            if (updateTimes.length > 0) {
+                const avgTime = updateTimes.reduce((a, b) => a + b, 0) / updateTimes.length;
+                document.getElementById('avgUpdateTime').textContent = Math.round(avgTime) + 'ms';
+            }
+        }
+
+        function addRecentUpdate(message) {
+            const recentUpdates = document.getElementById('recentUpdates');
+            const timestamp = new Date().toLocaleTimeString();
+
+            const update = document.createElement('div');
+            update.style.cssText = 'padding: 8px; border-bottom: 1px solid var(--border-color);';
+            update.innerHTML = `
+                <span style="color: var(--text-secondary); font-size: 12px;">${timestamp}</span>
+                <span style="margin-left: 12px;">${message}</span>
+            `;
+
+            if (recentUpdates.firstChild?.tagName === 'P') {
+                recentUpdates.innerHTML = '';
+            }
+
+            recentUpdates.insertBefore(update, recentUpdates.firstChild);
+
+            // Keep only last 20 updates
+            while (recentUpdates.children.length > 20) {
+                recentUpdates.removeChild(recentUpdates.lastChild);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            connectWebSocket();
+
+            console.log('Live tracking initialized');
+        });
+    </script>
+</body>
+
+</html>

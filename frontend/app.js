@@ -5,6 +5,22 @@
 
 const API_URL = 'http://localhost:8001/api';
 
+// Get WebSocket URL based on environment
+function getWebSocketUrl() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.hostname;
+
+    // For local development
+    if (host === 'localhost' || host === '127.0.0.1') {
+        return 'ws://localhost:8001';
+    }
+
+    // For production (Kubernetes/Minikube)
+    const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
+    return `${protocol}//${host}:8001`;
+}
+
+
 // Utility function for API calls
 async function apiCall(endpoint, method = 'GET', data = null) {
     const options = {

@@ -205,11 +205,13 @@ uber-clone/
 │   ├── matching_service.py     # Matches rides with drivers
 │   ├── location_service.py     # Tracks locations
 │   ├── payment_service.py      # Payment processing
-│   └── api_gateway.py          # Main API endpoint
+│   ├── websocket_service.py    # ✨ WebSocket connection manager
+│   └── api_gateway.py          # Main API endpoint + WebSocket
 ├── frontend/
 │   ├── index.html             # Main landing page
 │   ├── rider.html             # Rider interface
 │   ├── driver.html            # Driver interface
+│   ├── tracking.html          # ✨ Live tracking dashboard
 │   ├── styles.css             # Styles
 │   └── app.js                 # Frontend logic
 ├── k8s/                       # ✅ Kubernetes deployment files
@@ -236,7 +238,8 @@ uber-clone/
 │   └── database.py            # Database models
 ├── scripts/
 │   ├── init_db.py            # Database initialization
-│   └── test_kafka.py         # Kafka testing
+│   ├── test_kafka.py         # Kafka testing
+│   └── test_realtime_tracking.py  # ✨ Location tracking test
 ├── config/
 │   └── prometheus.yml         # Prometheus configuration
 ├── Dockerfile                 # Microservices image
@@ -249,6 +252,7 @@ uber-clone/
 ├── README.md                 # This file
 ├── ARCHITECTURE.md           # Architecture documentation
 ├── MONITORING.md             # Monitoring guide
+├── REALTIME_TRACKING.md      # ✨ Real-time tracking guide
 └── USER_GUIDE.md             # End-user guide
 ```
 
@@ -256,7 +260,8 @@ uber-clone/
 
 ### Rider Features
 - Request rides with pickup and destination
-- Real-time driver tracking
+- **Real-time driver tracking with live map** 🗺️
+- WebSocket-based live updates
 - Ride status updates
 - Fare estimation
 - Ride history
@@ -265,15 +270,37 @@ uber-clone/
 - Toggle online/offline status
 - Accept/reject ride requests
 - Navigate to pickup location
+- **Automatic location updates**
 - Update ride status
 - Earnings tracking
 
 ### System Features
-- Real-time location tracking
+- **✨ Real-time location tracking with WebSocket**
+- **Live interactive map with Leaflet**
+- **Sub-second location update latency**
 - Intelligent driver matching (based on proximity)
 - Event-driven architecture with Kafka
 - Scalable microservices design
-- WebSocket for real-time updates
+- Comprehensive monitoring with Prometheus/Grafana
+
+### 🆕 Live Tracking Page
+Access the new real-time tracking dashboard:
+- **URL**: `http://localhost:8080/tracking.html`
+- **Features**:
+  - Interactive map showing all online drivers
+  - Real-time location updates via WebSocket
+  - Driver search within radius
+  - Live statistics and metrics
+  - Recent activity log
+
+**Test the tracking system**:
+```bash
+# Simulate multiple drivers updating locations
+python scripts/test_realtime_tracking.py
+```
+
+See [REALTIME_TRACKING.md](REALTIME_TRACKING.md) for detailed documentation.
+
 
 ## Kafka Event Flow
 
