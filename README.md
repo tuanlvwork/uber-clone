@@ -1,6 +1,15 @@
 # Uber Clone with Kafka
 
-A microservices-based Uber clone application demonstrating Apache Kafka for real-time event streaming.
+A production-ready microservices-based Uber clone with Apache Kafka for real-time event streaming and **Kubernetes orchestration**.
+
+## 🚀 Deployment Options
+
+| Method | Environment | Command | Features |
+|--------|-------------|---------|----------|
+| **Kubernetes** ✅ | Production | `./k8s/scripts/deploy.sh` | High Availability, Auto-scaling, Self-healing |
+| **Docker Compose** | Development | `./start.sh` | Quick setup, Local testing |
+
+**→ See [k8s/QUICKSTART.md](k8s/QUICKSTART.md) for Kubernetes deployment**
 
 ## Architecture
 
@@ -10,6 +19,7 @@ This application consists of multiple microservices communicating via Kafka:
 - **Driver Service**: Manages driver availability and location updates
 - **Matching Service**: Matches riders with available drivers
 - **Location Service**: Tracks and broadcasts real-time locations
+- **Payment Service**: Processes payments and refunds
 - **API Gateway**: FastAPI-based gateway for frontend communication
 - **Frontend**: Modern web interface for riders and drivers
 - **Monitoring Stack**: Prometheus for metrics collection and Grafana for visualization
@@ -26,9 +36,18 @@ This application consists of multiple microservices communicating via Kafka:
 
 ## Prerequisites
 
+### For Local Development (Docker Compose)
 - Python 3.8+
-- Docker & Docker Compose (for Kafka and Zookeeper)
-- Node.js (optional, for frontend development)
+- Docker & Docker Compose
+
+### For Kubernetes Deployment (Production)
+- Docker
+- Minikube (`brew install minikube`)
+- kubectl (`brew install kubectl`)
+- 4 CPU cores, 8GB RAM minimum
+
+### Optional
+- Node.js (for frontend development)
 
 ## Installation
 
@@ -101,6 +120,54 @@ python -m http.server 8080 --directory frontend
 ./start.sh
 ```
 
+## Kubernetes Deployment
+
+Deploy the entire application to Kubernetes using Minikube:
+
+### 🚀 Quick Deploy (3 commands)
+
+```bash
+# 1. Run the deployment script
+./k8s/scripts/deploy.sh
+
+# 2. Wait for pods to be ready
+kubectl get pods -n uber-clone -w
+
+# 3. Access the app
+minikube service frontend -n uber-clone
+```
+
+### 📚 Documentation
+
+- **[Quick Start Guide](k8s/QUICKSTART.md)** - Get running in minutes
+- **[Detailed Guide](k8s/README.md)** - Complete documentation with troubleshooting
+
+### 🎯 What You Get
+
+The Kubernetes deployment includes:
+- ✅ **Infrastructure**: Kafka (KRaft), PostgreSQL, Kafka UI
+- ✅ **Microservices**: All 6 services with 2 replicas each
+- ✅ **Frontend**: Nginx-based static file server
+- ✅ **Monitoring**: Prometheus + Grafana
+- ✅ **Auto-scaling**: Ready for HPA configuration
+- ✅ **Health Checks**: Readiness and liveness probes
+
+### 🔗 Accessing Services
+
+After deployment:
+```bash
+MINIKUBE_IP=$(minikube ip)
+echo "Frontend:  http://$MINIKUBE_IP:30080"
+echo "Kafka UI:  http://$MINIKUBE_IP:30090"
+echo "Grafana:   http://$MINIKUBE_IP:30030"
+```
+
+### 🧹 Cleanup
+
+```bash
+./k8s/scripts/cleanup.sh
+```
+
 ## Testing
 
 ```bash
@@ -137,6 +204,7 @@ uber-clone/
 │   ├── driver_service.py       # Manages drivers
 │   ├── matching_service.py     # Matches rides with drivers
 │   ├── location_service.py     # Tracks locations
+│   ├── payment_service.py      # Payment processing
 │   └── api_gateway.py          # Main API endpoint
 ├── frontend/
 │   ├── index.html             # Main landing page
@@ -144,16 +212,44 @@ uber-clone/
 │   ├── driver.html            # Driver interface
 │   ├── styles.css             # Styles
 │   └── app.js                 # Frontend logic
-├── kafka/
-│   └── kafka_config.py        # Kafka configuration
+├── k8s/                       # ✅ Kubernetes deployment files
+│   ├── scripts/
+│   │   ├── deploy.sh          # One-command deployment
+│   │   ├── build.sh           # Build Docker images
+│   │   └── cleanup.sh         # Remove all resources
+│   ├── 00-namespace.yaml      # Kubernetes namespace
+│   ├── 01-configmap.yaml      # Configuration
+│   ├── 02-secrets.yaml        # Secrets
+│   ├── 10-kafka.yaml          # Kafka StatefulSet
+│   ├── 11-postgres.yaml       # PostgreSQL StatefulSet
+│   ├── 12-kafka-ui.yaml       # Kafka UI
+│   ├── 20-api-gateway.yaml    # API Gateway deployment
+│   ├── 21-25-...-service.yaml # Microservices (x6)
+│   ├── 30-frontend.yaml       # Frontend deployment
+│   ├── 40-prometheus.yaml     # Prometheus monitoring
+│   ├── 41-grafana.yaml        # Grafana dashboards
+│   ├── QUICKSTART.md          # Quick deployment guide
+│   ├── README.md              # Detailed K8s guide
+│   ├── ARCHITECTURE.md        # K8s architecture
+│   └── CHECKLIST.md           # Deployment checklist
 ├── models/
 │   └── database.py            # Database models
 ├── scripts/
 │   ├── init_db.py            # Database initialization
 │   └── test_kafka.py         # Kafka testing
-├── docker-compose.yml         # Kafka & Zookeeper setup
+├── config/
+│   └── prometheus.yml         # Prometheus configuration
+├── Dockerfile                 # Microservices image
+├── Dockerfile.frontend        # Frontend (nginx) image
+├── .dockerignore             # Docker build optimization
+├── docker-compose.yml         # Local development stack
 ├── requirements.txt           # Python dependencies
-└── README.md
+├── start.sh                  # Local startup script
+├── stop.sh                   # Local shutdown script
+├── README.md                 # This file
+├── ARCHITECTURE.md           # Architecture documentation
+├── MONITORING.md             # Monitoring guide
+└── USER_GUIDE.md             # End-user guide
 ```
 
 ## Features
@@ -235,7 +331,7 @@ python scripts/init_db.py
 - [ ] Chat between rider and driver
 - [x] PostgreSQL database
 - [ ] Redis caching
-- [ ] Kubernetes deployment
+- [x] Kubernetes deployment
 - [x] Monitoring with Prometheus/Grafana
 
 ## License

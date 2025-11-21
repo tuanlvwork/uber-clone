@@ -48,6 +48,29 @@
        (Prometheus & Grafana)
 ```
 
+## 🚀 Deployment Options
+
+This application supports two deployment modes:
+
+### 1. **Local Development** (Docker Compose)
+```bash
+./start.sh
+```
+- Quick setup for development
+- All services on one machine
+- Access at http://localhost:8080
+
+### 2. **Production** (Kubernetes with Minikube) ✅
+```bash
+./k8s/scripts/deploy.sh
+```
+- High availability (2 replicas per service)
+- Auto-scaling and self-healing
+- Production-ready monitoring
+- See [k8s/QUICKSTART.md](k8s/QUICKSTART.md) for details
+
+---
+
 ## Architecture Components
 
 ### 1. **Client Layer**
@@ -183,19 +206,42 @@ Event-driven message broker with 5 topics:
 
 ---
 
+## Deployment Options
+
+### **Local Development (Docker Compose)**
+- 1 Kafka broker (KRaft mode)
+- 1 PostgreSQL database
+- All services on single machine
+- Easy development and testing
+- Run with `./start.sh`
+
+### **Production (Kubernetes)** ✅ NEW!
+- **Complete Kubernetes deployment** available in `k8s/` directory
+- All 6 microservices with **2 replicas each** for high availability
+- StatefulSets for Kafka and PostgreSQL with persistent storage
+- Health checks (readiness + liveness probes)
+- Resource limits and requests defined
+- Auto-healing and rolling updates
+- Horizontal Pod Autoscaler ready
+- Deploy with `./k8s/scripts/deploy.sh`
+
+See [k8s/QUICKSTART.md](k8s/QUICKSTART.md) for quick deployment or [k8s/README.md](k8s/README.md) for detailed documentation.
+
 ## Scalability
 
-Current: **Single Instance**
-- 1 Kafka broker
-- 1 database
-- Services run on single machine
+### Current: **Highly Scalable**
+- ✅ Kubernetes deployment with auto-scaling capabilities
+- ✅ Multiple replicas for all microservices
+- ✅ Load balancing via Kubernetes Services
+- ✅ Persistent storage for stateful components
+- ✅ Ready for horizontal scaling
 
-Future: **Distributed**
-- Kafka cluster (3+ brokers)
-- PostgreSQL with replicas
-- Redis for caching
-- Load-balanced API gateways
-- Kubernetes orchestration
+### Future Enhancements: **Enterprise-Grade**
+- Kafka cluster (3+ brokers for fault tolerance)
+- PostgreSQL with read replicas
+- Redis for caching layer
+- Multi-region deployment
+- Service mesh (Istio/Linkerd)
 
 ---
 
@@ -209,12 +255,15 @@ Future: **Distributed**
 | Services | Python | Business logic |
 | Database | PostgreSQL | Data persistence |
 | Container | Docker | Kafka/PostgreSQL/Monitoring |
+| Orchestration | **Kubernetes** | **Container orchestration** |
 | Monitoring | Prometheus | Metrics collection |
 | Visualization | Grafana | Dashboards & alerts |
 
 ---
 
 ## Ports Summary
+
+### **Local Development (Docker Compose)**
 
 **Frontend & API:**
 - **8001** - API Gateway
@@ -225,6 +274,7 @@ Future: **Distributed**
 - **8003** - Driver Service (Prometheus metrics)
 - **8004** - Matching Service (Prometheus metrics)
 - **8005** - Location Service (Prometheus metrics)
+- **8006** - Payment Service (Prometheus metrics)
 
 **Infrastructure:**
 - **9093** - Kafka Broker (external)
@@ -236,9 +286,21 @@ Future: **Distributed**
 - **9090** - Prometheus
 - **8090** - Kafka UI Dashboard
 
+### **Kubernetes Deployment (Minikube)** ✅ NEW!
+
+**External Access (NodePort):**
+- **30080** - Frontend (http://\<MINIKUBE_IP\>:30080)
+- **30090** - Kafka UI (http://\<MINIKUBE_IP\>:30090)
+- **30030** - Grafana (http://\<MINIKUBE_IP\>:30030)
+
+**Internal Services (ClusterIP):**
+- All microservices communicate via Kubernetes DNS
+- Services automatically load-balanced
+- Health checks on all pods
+
 ---
 
-*This architecture demonstrates a production-ready microservices system with event-driven communication, distributed database, and comprehensive monitoring.*
+*This architecture demonstrates a production-ready microservices system with event-driven communication, distributed database, comprehensive monitoring, and Kubernetes orchestration.*
 
 **Implemented Features:**
 - ✅ Event-driven architecture with Kafka
@@ -246,11 +308,17 @@ Future: **Distributed**
 - ✅ Prometheus & Grafana monitoring
 - ✅ Payment service integration
 - ✅ Real-time location tracking
+- ✅ **Kubernetes deployment with auto-scaling**
+- ✅ **High availability (2 replicas per service)**
+- ✅ **Health checks and auto-healing**
+- ✅ **Persistent storage for stateful services**
 
 **Future Enhancements:**
 - Authentication & authorization
-- Load balancers for high availability
+- Service mesh (Istio/Linkerd)
 - Distributed tracing (Jaeger/Zipkin)
 - Redis caching layer
-- Kubernetes orchestration
+- Multi-region Kubernetes clusters
+- Advanced autoscaling policies
+- Network policies for pod isolation
 

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uber-config
+  namespace: uber-clone
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+  DATABASE_URL: "postgresql://uber:uberpassword@postgres:5432/uberdb"
+  API_GATEWAY_URL: "http://api-gateway:8001"
+  RIDE_SERVICE_URL: "http://ride-service:8002"
+  DRIVER_SERVICE_URL: "http://driver-service:8003"
+  MATCHING_SERVICE_URL: "http://matching-service:8004"
+  LOCATION_SERVICE_URL: "http://location-service:8005"
+  PAYMENT_SERVICE_URL: "http://payment-service:8006"
