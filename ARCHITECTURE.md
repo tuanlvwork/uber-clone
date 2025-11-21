@@ -14,7 +14,7 @@
                     │             │
 ┌───────────────────┴─────────────┴───────────────────────────┐
 │               API GATEWAY (FastAPI)                         │
-│                    Port 8000                                │
+│                    Port 8001                                │
 └──────────────────────────┬──────────────────────────────────┘
                            │ Publish/Subscribe Events
                     ┌──────▼──────┐
@@ -37,9 +37,15 @@
        └────────┴─────────┴───────────┘
                      │
               ┌──────▼──────┐
-              │   SQLite    │
+              │  PostgreSQL │
               │  Database   │
+              └──────┬──────┘
+                     │
+              ┌──────▼──────┐
+              │  Monitoring │
+              │    Stack    │
               └─────────────┘
+       (Prometheus & Grafana)
 ```
 
 ## Architecture Components
@@ -56,11 +62,12 @@
   - Update location
   - Complete rides
 
-### 2. **API Gateway** (Port 8000)
+### 2. **API Gateway** (Port 8001)
 - **FastAPI** REST API
 - Routes HTTP requests to services
 - OpenAPI/Swagger documentation
 - CORS enabled for frontend
+- Prometheus metrics exposed at `/metrics`
 
 ### 3. **Apache Kafka** (Port 9093)
 Event-driven message broker with 5 topics:
@@ -74,31 +81,47 @@ Event-driven message broker with 5 topics:
 | `ride-updates` | Driver Service | Ride Service | Status changes |
 
 ### 4. **Microservices**
-- **Ride Service**
+- **Ride Service** (Port 8002)
   - Creates ride requests
   - Updates ride status
   - Publishes to `ride-requests`
+  - Exposes Prometheus metrics
   
-- **Driver Service**
+- **Driver Service** (Port 8003)
   - Manages driver availability
   - Updates location
   - Handles ride actions (accept/start/complete)
+  - Exposes Prometheus metrics
   
-- **Matching Service**
+- **Matching Service** (Port 8004)
   - Finds nearest driver (Haversine algorithm)
   - Calculates fares
   - Publishes to `ride-matches`
+  - Exposes Prometheus metrics
   
-- **Location Service**
+- **Location Service** (Port 8005)
   - Tracks driver locations
   - Broadcasts to riders
   - Manages availability
+  - Exposes Prometheus metrics
 
 ### 5. **Data Layer**
-- **SQLite Database**
+- **PostgreSQL Database** (Port 5432)
   - Riders table
   - Drivers table
   - Rides table (with status tracking)
+  - Payments table
+
+### 6. **Monitoring Stack**
+- **Prometheus** (Port 9090)
+  - Metrics collection from all services
+  - Time-series database
+  - Query interface for metrics
+  
+- **Grafana** (Port 3000)
+  - Visualization dashboards
+  - Real-time monitoring
+  - Alerting capabilities
 
 ---
 
@@ -184,20 +207,50 @@ Future: **Distributed**
 | API | FastAPI | REST endpoints |
 | Messaging | Apache Kafka | Event streaming |
 | Services | Python | Business logic |
-| Database | SQLite | Data persistence |
-| Container | Docker | Kafka/Zookeeper |
+| Database | PostgreSQL | Data persistence |
+| Container | Docker | Kafka/PostgreSQL/Monitoring |
+| Monitoring | Prometheus | Metrics collection |
+| Visualization | Grafana | Dashboards & alerts |
 
 ---
 
 ## Ports Summary
 
-- **8000** - API Gateway
-- **8080** - Frontend (optional http-server)
-- **8090** - Kafka UI Dashboard
+**Frontend & API:**
+- **8001** - API Gateway
+- **8080** - Frontend (http-server)
+
+**Microservices Metrics:**
+- **8002** - Ride Service (Prometheus metrics)
+- **8003** - Driver Service (Prometheus metrics)
+- **8004** - Matching Service (Prometheus metrics)
+- **8005** - Location Service (Prometheus metrics)
+
+**Infrastructure:**
 - **9093** - Kafka Broker (external)
-- **2181** - Zookeeper
+- **29092** - Kafka Broker (internal)
+- **5432** - PostgreSQL Database
+
+**Monitoring & Management:**
+- **3000** - Grafana Dashboard
+- **9090** - Prometheus
+- **8090** - Kafka UI Dashboard
 
 ---
 
-*This is a simplified architecture suitable for learning and development.*
-*For production, consider adding: authentication, load balancers, monitoring, logging, and distributed databases.*
+*This architecture demonstrates a production-ready microservices system with event-driven communication, distributed database, and comprehensive monitoring.*
+
+**Implemented Features:**
+- ✅ Event-driven architecture with Kafka
+- ✅ PostgreSQL database with proper schema
+- ✅ Prometheus & Grafana monitoring
+- ✅ Payment service integration
+- ✅ Real-time location tracking
+
+**Future Enhancements:**
+- Authentication & authorization
+- Load balancers for high availability
+- Distributed tracing (Jaeger/Zipkin)
+- Redis caching layer
+- Kubernetes orchestration
+

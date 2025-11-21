@@ -162,6 +162,11 @@ class DriverService:
     
     def start(self):
         """Start the driver service"""
+        # Start Prometheus metrics server
+        from prometheus_client import start_http_server
+        start_http_server(8003)
+        logger.info("Prometheus metrics server started on port 8003")
+
         logger.info("Driver Service started")
         
         try:

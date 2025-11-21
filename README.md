@@ -12,6 +12,9 @@ This application consists of multiple microservices communicating via Kafka:
 - **Location Service**: Tracks and broadcasts real-time locations
 - **API Gateway**: FastAPI-based gateway for frontend communication
 - **Frontend**: Modern web interface for riders and drivers
+- **Monitoring Stack**: Prometheus for metrics collection and Grafana for visualization
+
+📖 **For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ## Kafka Topics
 
@@ -88,6 +91,8 @@ python -m http.server 8080 --directory frontend
 - Rider Interface: http://localhost:8000/rider
 - Driver Interface: http://localhost:8000/driver
 - Admin Dashboard: http://localhost:8000/admin
+- Grafana: http://localhost:3000
+- Prometheus: http://localhost:9090
 
 ## Quick Start with Script
 
@@ -105,6 +110,23 @@ pytest tests/
 # Test Kafka connectivity
 python scripts/test_kafka.py
 ```
+
+## Monitoring
+
+The application includes a comprehensive monitoring stack using Prometheus and Grafana.
+
+### Accessing Dashboards
+
+- **Grafana**: http://localhost:3000 (User: `admin`, Pass: `admin`)
+- **Prometheus**: http://localhost:9090
+
+### Metrics
+
+All microservices are instrumented to expose:
+- **System Metrics**: CPU, Memory, Garbage Collection
+- **Application Metrics**: Request latency, error rates, request counts
+
+For more details, see [MONITORING.md](MONITORING.md).
 
 ## Project Structure
 
@@ -206,15 +228,15 @@ python scripts/init_db.py
 
 ## Future Enhancements
 
-- [ ] Payment integration
+- [x] Payment integration
 - [ ] Rating system
 - [ ] Surge pricing
 - [ ] Multi-vehicle types
 - [ ] Chat between rider and driver
-- [ ] PostgreSQL database
+- [x] PostgreSQL database
 - [ ] Redis caching
 - [ ] Kubernetes deployment
-- [ ] Monitoring with Prometheus/Grafana
+- [x] Monitoring with Prometheus/Grafana
 
 ## License
 

@@ -95,6 +95,11 @@ class LocationService:
     
     def start(self):
         """Start consuming location and availability updates"""
+        # Start Prometheus metrics server
+        from prometheus_client import start_http_server
+        start_http_server(8005)
+        logger.info("Prometheus metrics server started on port 8005")
+
         # Consumer for location updates
         location_consumer = KafkaConsumerWrapper(
             TOPICS['DRIVER_LOCATIONS'],
