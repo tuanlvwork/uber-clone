@@ -228,6 +228,7 @@ async def get_rider_rides(rider_id: int, db=Depends(get_db)):
         "destination_address": ride.destination_address,
         "status": ride.status,
         "fare": ride.fare,
+        "distance": ride.distance,
         "requested_at": ride.requested_at.isoformat() if ride.requested_at else None
     } for ride in rides]
 
@@ -244,6 +245,7 @@ async def get_driver_rides(driver_id: int, db=Depends(get_db)):
         "destination_address": ride.destination_address,
         "status": ride.status,
         "fare": ride.fare,
+        "distance": ride.distance,
         "requested_at": ride.requested_at.isoformat() if ride.requested_at else None
     } for ride in rides]
 
