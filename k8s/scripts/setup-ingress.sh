@@ -41,6 +41,10 @@ echo ""
 
 # Apply ingress configuration
 echo -e "${YELLOW}Applying Ingress configuration...${NC}"
+
+# Fix for common Minikube Ingress webhook error
+kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission 2>/dev/null || true
+
 kubectl apply -f k8s/50-ingress.yaml
 echo -e "${GREEN}✓ Ingress configured${NC}"
 echo ""

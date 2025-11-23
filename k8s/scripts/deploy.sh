@@ -114,6 +114,10 @@ kubectl apply -f k8s/41-grafana.yaml
 
 echo "Setting up Ingress..."
 minikube addons enable ingress 2>/dev/null || echo "Ingress addon already enabled"
+
+# Fix for common Minikube Ingress webhook error
+kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission 2>/dev/null || true
+
 kubectl apply -f k8s/50-ingress.yaml
 
 echo -e "${GREEN}✓ All resources deployed${NC}"
