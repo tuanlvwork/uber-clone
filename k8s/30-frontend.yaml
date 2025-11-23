@@ -5,7 +5,7 @@ metadata:
   name: frontend
   namespace: uber-clone
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -17,6 +17,7 @@ spec:
       containers:
         - name: frontend
           image: uber-clone-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
               name: http

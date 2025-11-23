@@ -32,6 +32,7 @@
                 <div class="nav-links">
                     <a href="#features">Features</a>
                     <a href="#architecture">Architecture</a>
+                    <a href="#deployment">Deployment</a>
                     <a href="#demo">Demo</a>
                 </div>
             </div>
@@ -254,10 +255,89 @@
                 <div class="arch-arrow">↓</div>
 
                 <div class="arch-layer">
-                    <div class="arch-title">Data Layer</div>
+                    <div class="arch-title">Data & Monitoring</div>
                     <div class="arch-boxes">
-                        <div class="arch-box">SQLite Database</div>
+                        <div class="arch-box">PostgreSQL</div>
+                        <div class="arch-box">Prometheus</div>
+                        <div class="arch-box">Grafana</div>
                     </div>
+                </div>
+
+                <div class="arch-arrow" style="margin-top: 20px;">🔄</div>
+
+                <div class="arch-layer">
+                    <div class="arch-title">Deployment Options</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box primary">Docker Compose</div>
+                        <div class="arch-box primary">Kubernetes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="deployment" class="features-section"
+        style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));">
+        <div class="container">
+            <h2 class="section-title">Deployment Options</h2>
+            <p class="section-subtitle">Run locally with Docker Compose or deploy to Kubernetes</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M16 4L28 10v12l-12 6L4 22V10l12-6z" stroke="url(#gradient8)" stroke-width="3"
+                                stroke-linejoin="round" />
+                            <defs>
+                                <linearGradient id="gradient8">
+                                    <stop offset="0%" stop-color="#6366f1" />
+                                    <stop offset="100%" stop-color="#8b5cf6" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Docker Compose</h3>
+                    <p>Quick local setup with <code>docker-compose up -d</code> for development and testing</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="8" r="3" stroke="url(#gradient9)" stroke-width="2" />
+                            <circle cx="8" cy="20" r="3" stroke="url(#gradient9)" stroke-width="2" />
+                            <circle cx="24" cy="20" r="3" stroke="url(#gradient9)" stroke-width="2" />
+                            <line x1="16" y1="11" x2="10" y2="17" stroke="url(#gradient9)" stroke-width="2" />
+                            <line x1="16" y1="11" x2="22" y2="17" stroke="url(#gradient9)" stroke-width="2" />
+                            <defs>
+                                <linearGradient id="gradient9">
+                                    <stop offset="0%" stop-color="#10b981" />
+                                    <stop offset="100%" stop-color="#06b6d4" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Kubernetes</h3>
+                    <p>Production-ready deployment with auto-scaling, health checks, and rolling updates</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <rect x="6" y="8" width="20" height="4" rx="2" stroke="url(#gradient10)" stroke-width="2" />
+                            <rect x="6" y="14" width="20" height="4" rx="2" stroke="url(#gradient10)"
+                                stroke-width="2" />
+                            <rect x="6" y="20" width="20" height="4" rx="2" stroke="url(#gradient10)"
+                                stroke-width="2" />
+                            <defs>
+                                <linearGradient id="gradient10">
+                                    <stop offset="0%" stop-color="#ec4899" />
+                                    <stop offset="100%" stop-color="#f59e0b" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h3>Monitoring</h3>
+                    <p>Built-in Prometheus metrics and Grafana dashboards for observability</p>
                 </div>
             </div>
         </div>
@@ -345,13 +425,14 @@
                     <span>UberKafka</span>
                 </div>
                 <p class="footer-text">
-                    Built with Python, FastAPI, and Apache Kafka<br>
-                    Demonstrating real-time event-driven microservices architecture
+                    Built with Python, FastAPI, Apache Kafka, PostgreSQL, and Kubernetes<br>
+                    Demonstrating real-time event-driven microservices architecture with cloud-native deployment
                 </p>
                 <div class="footer-links">
                     <a href="https://kafka.apache.org" target="_blank">Apache Kafka</a>
                     <a href="https://fastapi.tiangolo.com" target="_blank">FastAPI</a>
-                    <a href="https://github.com" target="_blank">GitHub</a>
+                    <a href="https://kubernetes.io" target="_blank">Kubernetes</a>
+                    <a href="https://prometheus.io" target="_blank">Prometheus</a>
                 </div>
             </div>
         </div>

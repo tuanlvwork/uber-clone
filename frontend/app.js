@@ -3,7 +3,14 @@
  * Handles API calls and UI interactions
  */
 
-const API_URL = 'http://localhost:8001/api';
+// Get API URL based on environment
+function getApiUrl() {
+    // Use relative URL - Nginx will proxy /api/* to the API Gateway
+    // This works for both local Docker Compose and Kubernetes deployments
+    return '/api';
+}
+
+const API_URL = getApiUrl();
 
 // Get WebSocket URL based on environment
 function getWebSocketUrl() {
@@ -15,9 +22,8 @@ function getWebSocketUrl() {
         return 'ws://localhost:8001';
     }
 
-    // For production (Kubernetes/Minikube)
-    const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
-    return `${protocol}//${host}:8001`;
+    // For Kubernetes/Minikube deployment
+    return `${protocol}//${host}:30001`;
 }
 
 

@@ -291,6 +291,7 @@ See [k8s/QUICKSTART.md](k8s/QUICKSTART.md) for quick deployment or [k8s/README.m
 **External Access (NodePort):**
 - **30080** - Frontend (http://\<MINIKUBE_IP\>:30080)
 - **30090** - Kafka UI (http://\<MINIKUBE_IP\>:30090)
+- **30091** - Prometheus (http://\<MINIKUBE_IP\>:30091)
 - **30030** - Grafana (http://\<MINIKUBE_IP\>:30030)
 
 **Internal Services (ClusterIP):**

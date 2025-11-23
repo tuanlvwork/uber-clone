@@ -41,7 +41,7 @@ htmlcov/
 .DS_Store
 
 # Kubernetes
-k8s/
+# k8s/
 
 # Docker
 Dockerfile*

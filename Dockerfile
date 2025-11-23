@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY services/ ./services/
 COPY models/ ./models/
 COPY scripts/ ./scripts/
+COPY config/ ./config/
 
 # Create logs directory
 RUN mkdir -p logs

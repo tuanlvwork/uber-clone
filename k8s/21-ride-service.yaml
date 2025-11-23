@@ -5,7 +5,7 @@ metadata:
   name: ride-service
   namespace: uber-clone
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ride-service
@@ -24,6 +24,7 @@ spec:
       containers:
         - name: ride-service
           image: uber-clone:latest
+          imagePullPolicy: IfNotPresent
           command: ['python', 'services/ride_service.py']
           ports:
             - containerPort: 8002
@@ -32,24 +33,22 @@ spec:
             - configMapRef:
                 name: uber-config
           readinessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8002
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: 8002
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 10
           resources:
             requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
               cpu: "200m"
               memory: "256Mi"
-            limits:
-              cpu: "400m"
-              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service

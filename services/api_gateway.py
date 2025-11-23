@@ -298,6 +298,12 @@ async def startup_event():
     start_kafka_consumers()
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
+
+
 @app.get("/")
 async def root():
     """Root endpoint"""

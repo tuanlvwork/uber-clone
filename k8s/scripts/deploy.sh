@@ -43,7 +43,7 @@ echo ""
 echo -e "${YELLOW}Checking Minikube status...${NC}"
 if ! minikube status &> /dev/null; then
     echo -e "${YELLOW}Starting Minikube...${NC}"
-    minikube start --cpus=4 --memory=8192 --disk-size=20g
+    minikube start --cpus=2 --memory=4096 --disk-size=20g --kubernetes-version=v1.30.0
     echo -e "${GREEN}✓ Minikube started${NC}"
 else
     echo -e "${GREEN}✓ Minikube is already running${NC}"
@@ -103,7 +103,7 @@ kubectl apply -f k8s/21-ride-service.yaml
 kubectl apply -f k8s/22-driver-service.yaml
 kubectl apply -f k8s/23-matching-service.yaml
 kubectl apply -f k8s/24-location-service.yaml
-kubectl apply -f k8s/25-payment-service.yaml
+
 
 echo "Deploying frontend..."
 kubectl apply -f k8s/30-frontend.yaml

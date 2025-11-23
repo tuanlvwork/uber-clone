@@ -31,13 +31,13 @@ spec:
             - name: KAFKA_PROCESS_ROLES
               value: "broker,controller"
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
-              value: "1@kafka-0.kafka:29093"
+              value: "1@localhost:29093"
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: "CONTROLLER"
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
               value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
             - name: KAFKA_ADVERTISED_LISTENERS
-              value: "PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092"
+              value: "PLAINTEXT://kafka-0.kafka:29092,PLAINTEXT_HOST://localhost:9092"
             - name: KAFKA_LISTENERS
               value: "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092"
             - name: KAFKA_INTER_BROKER_LISTENER_NAME
@@ -59,7 +59,7 @@ spec:
               command:
                 - kafka-broker-api-versions
                 - --bootstrap-server
-                - localhost:9092
+                - 127.0.0.1:29092
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 10
@@ -68,7 +68,7 @@ spec:
               command:
                 - kafka-broker-api-versions
                 - --bootstrap-server
-                - localhost:9092
+                - 127.0.0.1:29092
             initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 10
