@@ -1,143 +1,281 @@
-# Kubernetes Quick Start
+# Kubernetes Quick Start Guide
 
-Get the Uber-Clone running on Kubernetes in 3 commands!
+Get the Uber-Clone application running on Kubernetes in under 5 minutes.
 
-## 🚀 Quick Deploy
+## ⚡ TL;DR
 
 ```bash
-# 1. Run the deployment script
+# One command to deploy everything
 ./k8s/scripts/deploy.sh
-
-# 2. Wait for all pods to be ready (check status)
-kubectl get pods -n uber-clone -w
-
-# 3. Open the app
-minikube service frontend -n uber-clone
 ```
 
-That's it! The script will:
-- ✅ Start Minikube
-- ✅ Build Docker images
-- ✅ Deploy all services
-- ✅ Show you access URLs
+Access at: **`http://$(minikube ip)/`**
 
-## 📱 Accessing the App
+---
 
-Once deployed, you can access:
+## 📋 Prerequisites Checklist
+
+- [ ] Docker installed
+- [ ] Minikube installed (`brew install minikube`)
+- [ ] kubectl installed (`brew install kubectl`)
+- [ ] At least 2 CPU cores and 4GB RAM available
+
+## 🚀 Deployment Steps
+
+### Step 1: Run Deployment Script
+
+```bash
+cd /path/to/uber-clone
+./k8s/scripts/deploy.sh
+```
+
+This script automatically:
+1. ✅ Starts Minikube (if not running)
+2. ✅ Builds Docker images
+3. ✅ Deploys Kafka + PostgreSQL
+4. ✅ Deploys all microservices
+5. ✅ Deploys frontend
+6. ✅ Sets up Ingress routing
+7. ✅ Deploys monitoring stack
+8. ✅ Waits for everything to be ready
+
+**Duration:** ~3-5 minutes
+
+### Step 2: Verify Deployment
+
+```bash
+# Check all pods are running
+kubectl get pods -n uber-clone
+
+# Should see all pods with status: Running (1/1)
+```
+
+### Step 3: Access Applications
 
 ```bash
 # Get Minikube IP
-MINIKUBE_IP=$(minikube ip)
-
-# Open in browser
-open http://$MINIKUBE_IP:30080/rider.html   # Rider app
-open http://$MINIKUBE_IP:30080/driver.html  # Driver app
-open http://$MINIKUBE_IP:30090              # Kafka UI
-open http://$MINIKUBE_IP:30030              # Grafana (admin/admin)
+minikube ip
+# Example output: 192.168.49.2
 ```
 
-Or use shortcuts:
+**Access URLs:**
+- Frontend: `http://192.168.49.2/`
+- Rider App: `http://192.168.49.2/rider.html`
+- Driver App: `http://192.168.49.2/driver.html`
+- Live Tracking: `http://192.168.49.2/tracking.html`
+- API Gateway: `http://192.168.49.2/api/`
+- Kafka UI: `http://192.168.49.2/kafka-ui/`
+- Grafana: `http://192.168.49.2/grafana/` (admin/admin)
+
+### Step 4: (Optional) Add Custom Domain
 
 ```bash
-minikube service frontend -n uber-clone    # Opens frontend
-minikube service kafka-ui -n uber-clone    # Opens Kafka UI
-minikube service grafana -n uber-clone     # Opens Grafana
+# Add to /etc/hosts
+echo "$(minikube ip) uber-clone.local" | sudo tee -a /etc/hosts
+
+# Now access at cleaner URL
+open http://uber-clone.local/
 ```
+
+---
+
+## 🎮 Using the Application
+
+### Test Ride Flow
+
+1. **Open Driver App:** `http://192.168.49.2/driver.html`
+   - Select "John Doe"
+   - Toggle status to **Online**
+   - Click "Update Location"
+
+2. **Open Rider App:** `http://192.168.49.2/rider.html`
+   - Select "Alice Brown"
+   - Enter pickup and destination
+   - Click "Request Ride"
+
+3. **Accept Ride (Driver App)**
+   - Click "Accept" on the ride request
+   - Click "Start Ride"
+   - Click "Complete Ride"
+
+4. **Watch Real-Time (Tracking Page):** `http://192.168.49.2/tracking.html`
+   - See all online drivers on the map
+   - Watch live location updates
+
+---
 
 ## 🔍 Monitoring
 
+### Check Logs
+
 ```bash
-# View all pods
+# All services at once
+./k8s/scripts/extract_logs.sh
+# Logs saved to k8s/logs/
+
+# Single service
+kubectl logs -f deployment/api-gateway -n uber-clone
+```
+
+### View Metrics
+
+**Grafana:** `http://$(minikube ip)/grafana/`
+- Username: `admin`
+- Password: `admin`
+
+**Prometheus:** `http://$(minikube ip)/prometheus/`
+
+**Kafka UI:** `http://$(minikube ip)/kafka-ui/`
+
+---
+
+## 🛠️ Common Commands
+
+### Status Checks
+
+```bash
+# Get all pods
 kubectl get pods -n uber-clone
 
-# View logs for API Gateway
-kubectl logs -f deployment/api-gateway -n uber-clone
+# Get all services  
+kubectl get svc -n uber-clone
 
-# View logs for all services
-kubectl logs -f -l app=ride-service -n uber-clone
+# Get Ingress
+kubectl get ingress -n uber-clone
+
+# Watch pods in real-time
+kubectl get pods -n uber-clone -w
 ```
+
+### Debugging
+
+```bash
+# Describe a pod (shows events)
+kubectl describe pod <pod-name> -n uber-clone
+
+# View logs
+kubectl logs <pod-name> -n uber-clone
+
+# Shell into a pod
+kubectl exec -it <pod-name> -n uber-clone -- /bin/bash
+```
+
+### Scaling
+
+```bash
+# Scale a service to 2 replicas
+kubectl scale deployment api-gateway -n uber-clone --replicas=2
+
+# Scale all services
+kubectl scale deployment --all -n uber-clone --replicas=2
+```
+
+---
 
 ## 🧹 Cleanup
 
-```bash
-# Remove everything
-./k8s/scripts/cleanup.sh
+### Remove Everything
 
-# Or manually
+```bash
+./k8s/scripts/cleanup.sh
+```
+
+Or manually:
+
+```bash
+# Delete namespace (removes all resources)
 kubectl delete namespace uber-clone
+
+# Stop Minikube
 minikube stop
+
+# Delete Minikube cluster
 minikube delete
 ```
 
-## 📚 Detailed Documentation
+---
 
-For detailed documentation, see [k8s/README.md](README.md)
+## ❓ Troubleshooting
 
-## 🔧 Manual Steps (if script fails)
+### Pods Not Starting
 
-If the deploy script fails, you can deploy manually:
+**Problem:** Pods stuck in `Pending` status
 
+**Solution:**
 ```bash
-# 1. Start Minikube
+# Check available resources
+kubectl describe pod <pod-name> -n uber-clone
+
+# If insufficient CPU/memory, reduce replicas
+kubectl scale deployment --all -n uber-clone --replicas=1
+
+# Or increase Minikube resources
+minikube stop
 minikube start --cpus=4 --memory=8192
-
-# 2. Build images
-eval $(minikube docker-env)
-docker build -t uber-clone:latest .
-docker build -t uber-clone-frontend:latest -f Dockerfile.frontend .
-
-# 3. Deploy
-kubectl apply -f k8s/00-namespace.yaml
-kubectl apply -f k8s/01-configmap.yaml
-kubectl apply -f k8s/02-secrets.yaml
-kubectl apply -f k8s/10-kafka.yaml
-kubectl apply -f k8s/11-postgres.yaml
-kubectl apply -f k8s/12-kafka-ui.yaml
-
-# Wait for infrastructure
-kubectl wait --for=condition=ready pod -l app=kafka -n uber-clone --timeout=120s
-kubectl wait --for=condition=ready pod -l app=postgres -n uber-clone --timeout=120s
-
-# Deploy services
-kubectl apply -f k8s/20-api-gateway.yaml
-kubectl apply -f k8s/21-ride-service.yaml
-kubectl apply -f k8s/22-driver-service.yaml
-kubectl apply -f k8s/23-matching-service.yaml
-kubectl apply -f k8s/24-location-service.yaml
-kubectl apply -f k8s/25-payment-service.yaml
-kubectl apply -f k8s/30-frontend.yaml
-kubectl apply -f k8s/40-prometheus.yaml
-kubectl apply -f k8s/41-grafana.yaml
 ```
 
-## 🐛 Troubleshooting
+### Pods Crashing
 
-### Images not found
+**Problem:** Pods in `CrashLoopBackOff`
+
+**Solution:**
 ```bash
-# Make sure you've pointed Docker to Minikube
+# View logs
+kubectl logs <pod-name> -n uber-clone --previous
+
+# Common causes:
+# 1. Kafka not ready - Wait ~60 seconds for Kafka to start
+# 2. Database not ready - Wait for PostgreSQL to be Running
+# 3. Config error - Check kubectl get configmap -n uber-clone
+```
+
+### Can't Access Services
+
+**Problem:** Can't access services via browser
+
+**Solution:**
+```bash
+# Check Ingress is running
+kubectl get ingress -n uber-clone
+kubectl get pods -n ingress-nginx
+
+# Restart Ingress
+minikube addons disable ingress
+minikube addons enable ingress
+
+# Or use NodePort fallback
+open "http://$(minikube ip):30080"  # Frontend
+```
+
+### Images Not Found
+
+**Problem:** `ImagePullBackOff` errors
+
+**Solution:**
+```bash
+# Rebuild images in Minikube's Docker
 eval $(minikube docker-env)
-# Then rebuild
 ./k8s/scripts/build.sh
 ```
 
-### Pods stuck in Pending
-```bash
-# Check events
-kubectl describe pod <pod-name> -n uber-clone
+---
 
-# Likely need more resources
-minikube stop
-minikube start --cpus=4 --memory=10240
-```
+## 📚 More Documentation
 
-### Can't access services
-```bash
-# Make sure Minikube is running
-minikube status
+- **[Full Kubernetes Guide](README.md)**: Detailed deployment documentation
+- **[Architecture Guide](../ARCHITECTURE.md)**: System architecture details
+- **[Main README](../README.md)**: Project overview
 
-# Get the IP
-minikube ip
+---
 
-# Check service is exposed
-kubectl get svc -n uber-clone
-```
+## 🎯 What's Next?
+
+1. ✅ Deploy the application → **You are here!**
+2. 📊 Explore monitoring dashboards
+3. 🧪 Test the ride flow  
+4. 📖 Read the architecture docs
+5. 🚀 Deploy to a real Kubernetes cluster
+
+---
+
+**Need help?** Check the [troubleshooting section](#-troubleshooting) or open an issue.

@@ -1,366 +1,371 @@
-# Uber Clone with Kafka
+# Uber Clone with Apache Kafka
 
-A production-ready microservices-based Uber clone with Apache Kafka for real-time event streaming and **Kubernetes orchestration**.
+A production-ready, event-driven microservices application demonstrating real-time ride-sharing with Apache Kafka, Kubernetes, and WebSocket support.
 
-## 🚀 Deployment Options
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5?logo=kubernetes)](k8s/README.md)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](docker-compose.yml)
+[![Kafka](https://img.shields.io/badge/Apache-Kafka-231F20?logo=apache-kafka)](https://kafka.apache.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql)](https://www.postgresql.org/)
 
-| Method | Environment | Command | Features |
-|--------|-------------|---------|----------|
-| **Kubernetes** ✅ | Production | `./k8s/scripts/deploy.sh` | High Availability, Auto-scaling, Self-healing |
-| **Docker Compose** | Development | `./start.sh` | Quick setup, Local testing |
+## 🚀 Quick Start
 
-**→ See [k8s/QUICKSTART.md](k8s/QUICKSTART.md) for Kubernetes deployment**
+### Kubernetes Deployment (Recommended)
 
-## Architecture
+One command to deploy the entire stack:
 
-This application consists of multiple microservices communicating via Kafka:
-
-- **Ride Service**: Handles ride requests from customers
-- **Driver Service**: Manages driver availability and location updates
-- **Matching Service**: Matches riders with available drivers
-- **Location Service**: Tracks and broadcasts real-time locations
-- **Payment Service**: Processes payments and refunds
-- **API Gateway**: FastAPI-based gateway for frontend communication
-- **Frontend**: Modern web interface for riders and drivers
-- **Monitoring Stack**: Prometheus for metrics collection and Grafana for visualization
-
-📖 **For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)**
-
-## Kafka Topics
-
-- `ride-requests`: New ride requests from customers
-- `driver-locations`: Real-time driver location updates
-- `driver-availability`: Driver online/offline status
-- `ride-matches`: Successful rider-driver matches
-- `ride-updates`: Ride status updates (accepted, started, completed)
-
-## Prerequisites
-
-### For Local Development (Docker Compose)
-- Python 3.8+
-- Docker & Docker Compose
-
-### For Kubernetes Deployment (Production)
-- Docker
-- Minikube (`brew install minikube`)
-- kubectl (`brew install kubectl`)
-- 4 CPU cores, 8GB RAM minimum
-
-### Optional
-- Node.js (for frontend development)
-
-## Installation
-
-1. **Clone the repository**
 ```bash
-cd /Users/tuanlv/Desktop/learn-space/kafka/gits/uber-clone
+./k8s/scripts/deploy.sh
 ```
 
-2. **Create virtual environment**
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+Access at: `http://$(minikube ip)/`
 
-3. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
+**[→ Full Kubernetes Guide](k8s/README.md)**
 
-4. **Start Kafka and Zookeeper**
-```bash
-docker-compose up -d
-```
-
-5. **Initialize the database**
-```bash
-python scripts/init_db.py
-```
-
-## Running the Application
-
-1. **Start all services** (in separate terminals):
+### Docker Compose (Development)
 
 ```bash
-# Terminal 1: Ride Service
-python services/ride_service.py
-
-# Terminal 2: Driver Service
-python services/driver_service.py
-
-# Terminal 3: Matching Service
-python services/matching_service.py
-
-# Terminal 4: Location Service
-python services/location_service.py
-
-# Terminal 5: API Gateway
-python services/api_gateway.py
-```
-
-2. **Open the frontend**
-```bash
-# Open in browser
-open frontend/index.html
-# Or use a local server
-python -m http.server 8080 --directory frontend
-```
-
-3. **Access the application**
-- Rider Interface: http://localhost:8000/rider
-- Driver Interface: http://localhost:8000/driver
-- Admin Dashboard: http://localhost:8000/admin
-- Grafana: http://localhost:3000
-- Prometheus: http://localhost:9090
-
-## Quick Start with Script
-
-```bash
-# Start all services at once
 ./start.sh
 ```
 
-## Kubernetes Deployment
+Access at: `http://localhost:8080`
 
-Deploy the entire application to Kubernetes using Minikube:
+---
 
-### 🚀 Quick Deploy (3 commands)
+## 📊 Architecture
+
+### System Overview
+
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │
+   ┌───▼────┐
+   │Ingress │ (Kubernetes) / Nginx (Docker Compose)
+   └───┬────┘
+       │
+   ┌───▼────────────┐
+   │  API Gateway   │ (FastAPI + WebSocket)
+   └────┬───────────┘
+        │
+   ┌────▼─────┐
+   │  Kafka   │ (Message Broker - KRaft Mode)
+   └────┬─────┘
+        │
+   ┌────▼──────────────────────────────────┐
+   │ Microservices (Producers/Consumers)   │
+   ├───────────┬────────────┬──────────────┤
+   │   Ride    │   Driver   │   Matching   │
+   │  Service  │  Service   │   Service    │
+   └───────────┴────────────┴──────────────┘
+        │                                    
+   ┌────▼──────┐
+   │PostgreSQL │ (Database)
+   └───────────┘
+```
+
+### Microservices
+
+- **Ride Service**: Manages ride lifecycle (request → matched → started → completed)
+- **Driver Service**: Handles driver availability and accepts rides
+- **Matching Service**: Intelligently matches riders with nearby drivers
+- **Location Service**: Tracks real-time GPS locations via Kafka streams
+- **API Gateway**: Unified REST + WebSocket interface for frontend
+- **Frontend**: Modern SPA with real-time updates
+
+### Kafka Topics
+
+| Topic | Purpose | Producer | Consumer |
+|-------|---------|----------|----------|
+| `ride-requests` | New ride requests | API Gateway | Matching Service |
+| `driver-locations` | GPS updates | API Gateway | Location Service, API Gateway |
+| `driver-availability` | Online/offline status | API Gateway | Location Service |
+| `ride-matches` | Successful matches | Matching Service | Ride Service |
+| `ride-updates` | Status changes | Driver Service | API Gateway, Ride Service |
+
+## 🔧 Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | Vanilla JS + Leaflet.js | Interactive maps, real-time tracking |
+| **API** | FastAPI + WebSockets | REST + real-time communication |
+| **Services** | Python 3.9 | Microservices implementation |
+| **Messaging** | Apache Kafka (KRaft) | Event streaming & service decoupling |
+| **Database** | PostgreSQL 13 | Persistent data storage |
+| **Monitoring** | Prometheus + Grafana | Metrics & visualization |
+| **Orchestration** | Kubernetes + Docker Compose | Deployment & scaling |
+| **Proxy** | Nginx + Ingress | Load balancing & routing |
+
+## 📦 Deployment Options
+
+### 🎯 Kubernetes (Production)
+
+**Best for:** Production, staging, CI/CD pipelines
 
 ```bash
-# 1. Run the deployment script
+# One-command deployment
 ./k8s/scripts/deploy.sh
 
-# 2. Wait for pods to be ready
-kubectl get pods -n uber-clone -w
-
-# 3. Access the app
-minikube service frontend -n uber-clone
+# Access via Ingress
+http://$(minikube ip)/            # Frontend
+http://$(minikube ip)/api/        # API Gateway
+http://$(minikube ip)/kafka-ui/   # Kafka UI
+http://$(minikube ip)/grafana/    # Grafana
 ```
 
-### 📚 Documentation
+**Features:**
+- ✅ Auto-scaling with HPA
+- ✅ Self-healing pods
+- ✅ Rolling updates
+- ✅ Resource management
+- ✅ Ingress routing
+- ✅ Health checks
 
-- **[Quick Start Guide](k8s/QUICKSTART.md)** - Get running in minutes
-- **[Detailed Guide](k8s/README.md)** - Complete documentation with troubleshooting
+**[→ Kubernetes Guide](k8s/README.md)**
 
-### 🎯 What You Get
+### 🐳 Docker Compose (Development)
 
-The Kubernetes deployment includes:
-- ✅ **Infrastructure**: Kafka (KRaft), PostgreSQL, Kafka UI
-- ✅ **Microservices**: All 6 services with 2 replicas each
-- ✅ **Frontend**: Nginx-based static file server
-- ✅ **Monitoring**: Prometheus + Grafana
-- ✅ **Auto-scaling**: Ready for HPA configuration
-- ✅ **Health Checks**: Readiness and liveness probes
+**Best for:** Local development, quick testing
 
-### 🔗 Accessing Services
-
-After deployment:
 ```bash
-MINIKUBE_IP=$(minikube ip)
-echo "Frontend:  http://$MINIKUBE_IP:30080"
-echo "Kafka UI:  http://$MINIKUBE_IP:30090"
-echo "Grafana:   http://$MINIKUBE_IP:30030"
+# Start all services
+./start.sh
+
+# Access
+http://localhost:8080       # Frontend
+http://localhost:8001       # API Gateway
+http://localhost:9090       # Prometheus
+http://localhost:3000       # Grafana
 ```
 
-### 🧹 Cleanup
+**Features:**
+- ✅ Single command setup
+- ✅ Hot reload support
+- ✅ Easy debugging
+- ✅ Volume mounts for development
 
+## 🌐 Application Features
+
+### For Riders
+- 🗺️ **Interactive Map**: Visual ride booking with pickup/destination selection
+- 📍 **Real-Time Tracking**: Live driver location updates via WebSocket
+- 📊 **Ride History**: View past rides with detailed information
+- 💳 **Payment Processing**: Secure payment handling
+
+### For Drivers
+- 🚗 **Availability Toggle**: Go online/offline instantly
+- 📍 **Location Updates**: Automatic GPS broadcasting every 10 seconds
+- 🔔 **Ride Notifications**: Real-time ride requests
+- 💰 **Earnings Tracking**: View completed rides and total earnings
+
+### For Admins
+- 📊 **Live Dashboard**: Monitor all active drivers on a map
+- 📈 **Metrics**: Prometheus metrics with Grafana dashboards
+- 🔍 **Kafka UI**: Inspect topics, messages, and consumer groups
+- 📝 **Logs**: Centralized logging for all services
+
+## 📋 Prerequisites
+
+### Required
+- **Docker** 20.10+
+- **Docker Compose** 2.0+ (for local dev)
+- **Minikube** 1.33+ (for Kubernetes)
+- **kubectl** 1.27+ (for Kubernetes)
+
+### System Requirements
+- **For Docker Compose**: 4GB RAM, 2 CPU cores
+- **For Kubernetes**: 8GB RAM, 4 CPU cores (recommended)
+
+### Install on macOS
+```bash
+brew install docker docker-compose minikube kubectl
+```
+
+## 🚀 Getting Started
+
+### Option 1: Kubernetes (Production-like)
+
+```bash
+# 1. Clone repository
+git clone <repo-url>
+cd uber-clone
+
+# 2. Deploy to Kubernetes
+./k8s/scripts/deploy.sh
+
+# 3. Access application
+open "http://$(minikube ip)/"
+```
+
+### Option 2: Docker Compose (Quick Start)
+
+```bash
+# 1. Clone repository
+git clone <repo-url>
+cd uber-clone
+
+# 2. Start services
+./start.sh
+
+# 3. Access application
+open http://localhost:8080
+```
+
+## 📖 Documentation
+
+- **[Architecture Guide](ARCHITECTURE.md)**: Detailed system architecture
+- **[Kubernetes Deployment](k8s/README.md)**: K8s deployment guide
+- **[User Guide](USER_GUIDE.md)**: How to use the application
+- **[Monitoring Guide](MONITORING.md)**: Prometheus & Grafana setup
+
+## 🔍 Monitoring & Observability
+
+### Prometheus Metrics
+
+All services expose metrics at `/metrics`:
+- Request counts & latencies
+- Kafka message throughput
+- Database connection pool stats
+- Custom business metrics
+
+### Grafana Dashboards
+
+Pre-configured dashboards for:
+- Service health overview
+- Kafka topic monitoring  
+- Database performance
+- Request/response metrics
+
+**Access Grafana:**
+- Kubernetes: `http://$(minikube ip)/grafana/`
+- Docker Compose: `http://localhost:3000`
+- Credentials: `admin / admin`
+
+### Kafka UI
+
+Monitor topics, consumers, and messages:
+- Kubernetes: `http://$(minikube ip)/kafka-ui/`
+- Docker Compose: `http://localhost:8080/kafka-ui/`
+
+## 🧪 Testing
+
+### Manual Testing
+
+1. **Open Rider App**: http://localhost:8080/rider.html
+2. **Create a ride request** with pickup/destination
+3. **Open Driver App**: http://localhost:8080/driver.html
+4. **Go online** and accept the ride
+5. **Track in real-time**: http://localhost:8080/tracking.html
+
+### API Testing
+
+```bash
+# Health check
+curl http://localhost:8001/health
+
+# List riders
+curl http://localhost:8001/api/riders/1
+
+# Get nearby drivers
+curl "http://localhost:8001/api/drivers/nearby?lat=40.7128&lon=-74.0060"
+```
+
+## 🐛 Troubleshooting
+
+### Kubernetes Issues
+
+```bash
+# Check pod status
+kubectl get pods -n uber-clone
+
+# View logs
+kubectl logs -f deployment/api-gateway -n uber-clone
+
+# Extract all logs to files
+./k8s/scripts/extract_logs.sh
+```
+
+### Docker Compose Issues
+
+```bash
+# View logs
+docker-compose logs -f api-gateway
+
+# Restart a service
+docker-compose restart ride-service
+
+# Rebuild images
+docker-compose build --no-cache
+```
+
+### Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| Pods pending | Reduce replicas or increase Minikube resources |
+| Kafka connection failed | Wait for Kafka pod to be Running (takes ~60s) |
+| Frontend shows errors | Check API Gateway logs for issues |
+| WebSocket not connecting | Verify Ingress/proxy configuration |
+
+## 🧹 Cleanup
+
+### Kubernetes
 ```bash
 ./k8s/scripts/cleanup.sh
+# or
+kubectl delete namespace uber-clone
+minikube delete
 ```
 
-## Testing
-
+### Docker Compose
 ```bash
-# Run unit tests
-pytest tests/
-
-# Test Kafka connectivity
-python scripts/test_kafka.py
+docker-compose down -v
 ```
 
-## Monitoring
-
-The application includes a comprehensive monitoring stack using Prometheus and Grafana.
-
-### Accessing Dashboards
-
-- **Grafana**: http://localhost:3000 (User: `admin`, Pass: `admin`)
-- **Prometheus**: http://localhost:9090
-
-### Metrics
-
-All microservices are instrumented to expose:
-- **System Metrics**: CPU, Memory, Garbage Collection
-- **Application Metrics**: Request latency, error rates, request counts
-
-For more details, see [MONITORING.md](MONITORING.md).
-
-## Project Structure
+## 📚 Project Structure
 
 ```
 uber-clone/
-├── services/
-│   ├── ride_service.py         # Handles ride requests
-│   ├── driver_service.py       # Manages drivers
-│   ├── matching_service.py     # Matches rides with drivers
-│   ├── location_service.py     # Tracks locations
-│   ├── payment_service.py      # Payment processing
-│   ├── websocket_service.py    # ✨ WebSocket connection manager
-│   └── api_gateway.py          # Main API endpoint + WebSocket
-├── frontend/
-│   ├── index.html             # Main landing page
-│   ├── rider.html             # Rider interface
-│   ├── driver.html            # Driver interface
-│   ├── tracking.html          # ✨ Live tracking dashboard
-│   ├── styles.css             # Styles
-│   └── app.js                 # Frontend logic
-├── k8s/                       # ✅ Kubernetes deployment files
-│   ├── scripts/
-│   │   ├── deploy.sh          # One-command deployment
-│   │   ├── build.sh           # Build Docker images
-│   │   └── cleanup.sh         # Remove all resources
-│   ├── 00-namespace.yaml      # Kubernetes namespace
-│   ├── 01-configmap.yaml      # Configuration
-│   ├── 02-secrets.yaml        # Secrets
-│   ├── 10-kafka.yaml          # Kafka StatefulSet
-│   ├── 11-postgres.yaml       # PostgreSQL StatefulSet
-│   ├── 12-kafka-ui.yaml       # Kafka UI
-│   ├── 20-api-gateway.yaml    # API Gateway deployment
-│   ├── 21-25-...-service.yaml # Microservices (x6)
-│   ├── 30-frontend.yaml       # Frontend deployment
-│   ├── 40-prometheus.yaml     # Prometheus monitoring
-│   ├── 41-grafana.yaml        # Grafana dashboards
-│   ├── QUICKSTART.md          # Quick deployment guide
-│   ├── README.md              # Detailed K8s guide
-│   ├── ARCHITECTURE.md        # K8s architecture
-│   └── CHECKLIST.md           # Deployment checklist
-├── models/
-│   └── database.py            # Database models
-├── scripts/
-│   ├── init_db.py            # Database initialization
-│   ├── test_kafka.py         # Kafka testing
-│   └── test_realtime_tracking.py  # ✨ Location tracking test
-├── config/
-│   └── prometheus.yml         # Prometheus configuration
-├── Dockerfile                 # Microservices image
-├── Dockerfile.frontend        # Frontend (nginx) image
-├── .dockerignore             # Docker build optimization
-├── docker-compose.yml         # Local development stack
-├── requirements.txt           # Python dependencies
-├── start.sh                  # Local startup script
-├── stop.sh                   # Local shutdown script
-├── README.md                 # This file
-├── ARCHITECTURE.md           # Architecture documentation
-├── MONITORING.md             # Monitoring guide
-├── REALTIME_TRACKING.md      # ✨ Real-time tracking guide
-└── USER_GUIDE.md             # End-user guide
+├── services/              # Microservices
+│   ├── api_gateway.py
+│   ├── ride_service.py
+│   ├── driver_service.py
+│   ├── matching_service.py
+│   └── location_service.py
+├── frontend/              # Web UI
+│   ├── index.html
+│   ├── rider.html
+│   ├── driver.html
+│   └── tracking.html
+├── k8s/                   # Kubernetes manifests
+│   ├── scripts/           # Deployment scripts
+│   ├── *.yaml            # K8s resources
+│   └── README.md         # K8s guide
+├── models/                # Database models
+├── config/                # Configuration
+├── docker-compose.yml     # Docker Compose config
+└── start.sh              # Quick start script
 ```
 
-## Features
+## 🤝 Contributing
 
-### Rider Features
-- Request rides with pickup and destination
-- **Real-time driver tracking with live map** 🗺️
-- WebSocket-based live updates
-- Ride status updates
-- Fare estimation
-- Ride history
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-### Driver Features
-- Toggle online/offline status
-- Accept/reject ride requests
-- Navigate to pickup location
-- **Automatic location updates**
-- Update ride status
-- Earnings tracking
+## 📄 License
 
-### System Features
-- **✨ Real-time location tracking with WebSocket**
-- **Live interactive map with Leaflet**
-- **Sub-second location update latency**
-- Intelligent driver matching (based on proximity)
-- Event-driven architecture with Kafka
-- Scalable microservices design
-- Comprehensive monitoring with Prometheus/Grafana
+MIT License - see LICENSE file for details
 
-### 🆕 Live Tracking Page
-Access the new real-time tracking dashboard:
-- **URL**: `http://localhost:8080/tracking.html`
-- **Features**:
-  - Interactive map showing all online drivers
-  - Real-time location updates via WebSocket
-  - Driver search within radius
-  - Live statistics and metrics
-  - Recent activity log
+## 🙏 Acknowledgments
 
-**Test the tracking system**:
-```bash
-# Simulate multiple drivers updating locations
-python scripts/test_realtime_tracking.py
-```
+- Apache Kafka for event streaming
+- FastAPI for the excellent async framework
+- Kubernetes community for orchestration tools
+- Leaflet.js for interactive maps
 
-See [REALTIME_TRACKING.md](REALTIME_TRACKING.md) for detailed documentation.
+---
 
-
-## Kafka Event Flow
-
-1. **Ride Request Flow**:
-   - Rider requests ride → `ride-requests` topic
-   - Matching service consumes request
-   - Finds nearest available driver
-   - Publishes match → `ride-matches` topic
-
-2. **Location Update Flow**:
-   - Driver sends location → `driver-locations` topic
-   - Location service broadcasts to relevant riders
-   - Real-time map updates
-
-3. **Ride Status Flow**:
-   - Driver accepts/starts/completes ride
-   - Publishes status → `ride-updates` topic
-   - Rider receives real-time notifications
-
-## Configuration
-
-Edit `kafka/kafka_config.py` to customize:
-- Kafka broker addresses
-- Topic configurations
-- Consumer group IDs
-- Retry policies
-
-## Troubleshooting
-
-**Kafka Connection Issues**:
-```bash
-# Check if Kafka is running
-docker-compose ps
-
-# View Kafka logs
-docker-compose logs kafka
-
-# Restart Kafka
-docker-compose restart
-```
-
-**Database Issues**:
-```bash
-# Reset database
-rm uber.db
-python scripts/init_db.py
-```
-
-## Future Enhancements
-
-- [x] Payment integration
-- [ ] Rating system
-- [ ] Surge pricing
-- [ ] Multi-vehicle types
-- [ ] Chat between rider and driver
-- [x] PostgreSQL database
-- [ ] Redis caching
-- [x] Kubernetes deployment
-- [x] Monitoring with Prometheus/Grafana
-
-## License
-
-MIT License
+**Made with ❤️ demonstrating event-driven microservices architecture**
