@@ -116,30 +116,11 @@ kubectl apply -f k8s/40-prometheus.yaml
 kubectl apply -f k8s/41-grafana.yaml
 ```
 
-### 7. Set Up Ingress
-
-```bash
-# Enable Ingress addon
-minikube addons enable ingress
-
-# Apply Ingress configuration
-kubectl apply -f k8s/50-ingress.yaml
-
-# Wait for Ingress controller
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=120s
-```
-
-### 8. Verify Deployment
+### 7. Verify Deployment
 
 ```bash
 # Check all pods are running
 kubectl get pods -n uber-clone
-
-# Check Ingress
-kubectl get ingress -n uber-clone
 
 # Check services
 kubectl get svc -n uber-clone
@@ -147,27 +128,24 @@ kubectl get svc -n uber-clone
 
 ## 🌐 Accessing the Application
 
-### Method 1: Ingress (Recommended)
+### Method 1: Minikube Service (Recommended for macOS)
 
-Direct access via Minikube IP:
+This automatically creates a tunnel to access the service:
+
 ```bash
-MINIKUBE_IP=$(minikube ip)
-echo "Frontend: http://$MINIKUBE_IP/"
-echo "API: http://$MINIKUBE_IP/api/"
-echo "Kafka UI: http://$MINIKUBE_IP/kafka-ui/"
-echo "Grafana: http://$MINIKUBE_IP/grafana/"
+# Open frontend
+minikube service frontend -n uber-clone
+
+# Open Kafka UI
+minikube service kafka-ui -n uber-clone
+
+# Open Grafana
+minikube service grafana -n uber-clone
 ```
 
-With custom domain (optional):
-```bash
-# Add to /etc/hosts
-echo "$(minikube ip) uber-clone.local" | sudo tee -a /etc/hosts
+### Method 2: NodePort (Direct Access)
 
-# Access at clean URL
-open http://uber-clone.local/
-```
-
-### Method 2: NodePort (Alternative)
+If you are on Linux or have a direct route to Minikube IP:
 
 ```bash
 MINIKUBE_IP=$(minikube ip)

@@ -35,9 +35,8 @@ This script automatically:
 3. ✅ Deploys Kafka + PostgreSQL
 4. ✅ Deploys all microservices
 5. ✅ Deploys frontend
-6. ✅ Sets up Ingress routing
-7. ✅ Deploys monitoring stack
-8. ✅ Waits for everything to be ready
+6. ✅ Deploys monitoring stack (Prometheus & Grafana)
+7. ✅ Waits for everything to be ready
 
 **Duration:** ~3-5 minutes
 
@@ -52,30 +51,24 @@ kubectl get pods -n uber-clone
 
 ### Step 3: Access Applications
 
+**Option 1: Automatic Tunnel (Recommended)**
+```bash
+minikube service frontend -n uber-clone
+```
+
+**Option 2: Direct NodePort**
 ```bash
 # Get Minikube IP
 minikube ip
-# Example output: 192.168.49.2
 ```
 
 **Access URLs:**
-- Frontend: `http://192.168.49.2/`
-- Rider App: `http://192.168.49.2/rider.html`
-- Driver App: `http://192.168.49.2/driver.html`
-- Live Tracking: `http://192.168.49.2/tracking.html`
-- API Gateway: `http://192.168.49.2/api/`
-- Kafka UI: `http://192.168.49.2/kafka-ui/`
-- Grafana: `http://192.168.49.2/grafana/` (admin/admin)
-
-### Step 4: (Optional) Add Custom Domain
-
-```bash
-# Add to /etc/hosts
-echo "$(minikube ip) uber-clone.local" | sudo tee -a /etc/hosts
-
-# Now access at cleaner URL
-open http://uber-clone.local/
-```
+- Frontend: `http://<MINIKUBE_IP>:30080`
+- Rider App: `http://<MINIKUBE_IP>:30080/rider.html`
+- Driver App: `http://<MINIKUBE_IP>:30080/driver.html`
+- API Gateway: `http://<MINIKUBE_IP>:30001`
+- Kafka UI: `http://<MINIKUBE_IP>:30090`
+- Grafana: `http://<MINIKUBE_IP>:30030`
 
 ---
 

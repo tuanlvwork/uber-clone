@@ -112,23 +112,8 @@ echo "Deploying monitoring stack..."
 kubectl apply -f k8s/40-prometheus.yaml
 kubectl apply -f k8s/41-grafana.yaml
 
-echo "Setting up Ingress..."
-minikube addons enable ingress 2>/dev/null || echo "Ingress addon already enabled"
-
-# Fix for common Minikube Ingress webhook error
-kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission 2>/dev/null || true
-
-kubectl apply -f k8s/50-ingress.yaml
-
 echo -e "${GREEN}✓ All resources deployed${NC}"
 echo ""
-
-# Wait for ingress controller
-echo -e "${YELLOW}Waiting for Ingress controller...${NC}"
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=120s 2>/dev/null || echo "Ingress controller setup in progress..."
 
 # Wait for deployments
 echo -e "${YELLOW}Waiting for all pods to be ready (this may take 2-3 minutes)...${NC}"
@@ -143,30 +128,22 @@ echo ""
 
 MINIKUBE_IP=$(minikube ip)
 
-echo "Access the application via Ingress (Recommended):"
-echo "  • Frontend:       http://$MINIKUBE_IP/"
-echo "  • Rider App:      http://$MINIKUBE_IP/rider.html"
-echo "  • Driver App:     http://$MINIKUBE_IP/driver.html"
-echo "  • API Gateway:    http://$MINIKUBE_IP/api/"
-echo "  • Kafka UI:       http://$MINIKUBE_IP/kafka-ui/"
-echo "  • Grafana:        http://$MINIKUBE_IP/grafana/ (admin/admin)"
-echo "  • Prometheus:     http://$MINIKUBE_IP/prometheus/"
-echo ""
-
-echo "Or add to /etc/hosts for custom domain:"
-echo "  echo \"$MINIKUBE_IP uber-clone.local\" | sudo tee -a /etc/hosts"
-echo "  Then access at: http://uber-clone.local/"
-echo ""
-
-echo "Alternative - NodePort access:"
+echo "Access the application:"
 echo "  • Frontend:       http://$MINIKUBE_IP:30080"
-echo "  • API Gateway:    http://$MINIKUBE_IP:30001"
+echo "  • Rider App:      http://$MINIKUBE_IP:30080/rider.html"
+echo "  • Driver App:     http://$MINIKUBE_IP:30080/driver.html"
 echo "  • Kafka UI:       http://$MINIKUBE_IP:30090"
+echo "  • Grafana:        http://$MINIKUBE_IP:30030 (admin/admin)"
+echo ""
+
+echo "Or use minikube service commands (Recommended for macOS):"
+echo "  minikube service frontend -n uber-clone"
+echo "  minikube service kafka-ui -n uber-clone"
+echo "  minikube service grafana -n uber-clone"
 echo ""
 
 echo "Check status:"
 echo "  kubectl get pods -n uber-clone"
-echo "  kubectl get ingress -n uber-clone"
 echo "  kubectl logs -f deployment/api-gateway -n uber-clone"
 echo ""
 
